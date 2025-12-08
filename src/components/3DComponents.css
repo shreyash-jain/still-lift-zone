@@ -1,0 +1,1007 @@
+/* 3D Component Styles */
+
+.reveal-element-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  /* Ensure reveal elements sit above the page chrome/background but below message cards */
+  z-index: 1000;
+}
+
+.reveal-element-container > :not(.reveal-overlay) {
+  position: relative;
+  z-index: 1005;
+  isolation: isolate;
+}
+
+.reveal-overlay {
+  position: fixed;
+  inset: 0;
+  /* Theme-aware background (overridden below by .light-mode/.dark-mode) */
+  background: rgba(15, 23, 42, 0.25);
+  /* Removed backdrop blur to keep page content crisp */
+  pointer-events: none;
+  opacity: 0;
+  animation: revealOverlayFade 0.3s ease forwards;
+  /* Keep the overlay behind all reveal elements/cards - lowest priority */
+  z-index: 10;
+}
+
+/* Ensure overlay matches selected theme */
+.light-mode .reveal-overlay {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.dark-mode .reveal-overlay {
+  background: rgba(15, 23, 42, 0.25);
+}
+
+.reveal-overlay--spotlight {
+  background: radial-gradient(circle at 50% 45%,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(15, 23, 42, 0.4) 50%,
+    rgba(15, 23, 42, 0.65) 100%);
+  /* Removed blur to avoid blurring entire page */
+}
+
+.light-mode .reveal-overlay--spotlight {
+  background: radial-gradient(circle at 50% 45%,
+    rgba(255, 255, 255, 0.35) 0%,
+    rgba(0, 0, 0, 0.12) 50%,
+    rgba(0, 0, 0, 0.18) 100%);
+}
+
+.dark-mode .reveal-overlay--spotlight {
+  background: radial-gradient(circle at 50% 45%,
+    rgba(255, 255, 255, 0.08) 0%,
+    rgba(15, 23, 42, 0.4) 50%,
+    rgba(15, 23, 42, 0.65) 100%);
+}
+
+@keyframes revealOverlayFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* 3D Balloon Styles */
+/* Balloon Container */
+.balloon-container {
+  position: relative;
+  width: 200px;
+  height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Balloon */
+.balloon {
+  position: relative;
+  width: 120px;
+  height: 160px;
+  transition: all 0.3s ease;
+  transform-style: preserve-3d;
+}
+
+.balloon.hovered {
+  transform: scale(1.05) translateY(-5px);
+  filter: brightness(1.1);
+}
+
+.balloon.popping {
+  animation: balloonPopLottie 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55) forwards;
+}
+
+.balloon.revealed {
+  opacity: 0;
+  transform: scale(0.1) rotate(180deg);
+  transition: all 0.6s ease;
+}
+
+/* Balloon Body */
+.balloon-body {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  box-shadow: 
+    inset 0 -20px 30px rgba(0, 0, 0, 0.2),
+    inset 0 20px 30px rgba(255, 255, 255, 0.3),
+    0 10px 30px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.balloon-highlight {
+  position: absolute;
+  top: 15%;
+  left: 20%;
+  width: 30%;
+  height: 25%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.8) 0%, rgba(255, 255, 255, 0.2) 100%);
+  border-radius: 50%;
+  filter: blur(1px);
+}
+
+.balloon-shine {
+  position: absolute;
+  top: 25%;
+  left: 15%;
+  width: 20%;
+  height: 15%;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.1) 100%);
+  border-radius: 50%;
+  filter: blur(0.5px);
+}
+
+.balloon-texture {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+  border-radius: 50%;
+}
+
+/* Balloon String */
+.balloon-string {
+  position: absolute;
+  bottom: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2px;
+  height: 80px;
+  background: linear-gradient(to bottom, #666, #999);
+}
+
+/* Balloon Knot */
+.balloon-knot {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 12px;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* Floating Sparkles */
+.floating-sparkles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.sparkle {
+  position: absolute;
+  font-size: 16px;
+  animation: sparkleFloat 3s ease-in-out infinite;
+  opacity: 0.8;
+}
+
+.sparkle-1 {
+  top: 10%;
+  left: 15%;
+  animation-delay: 0s;
+}
+
+.sparkle-2 {
+  top: 20%;
+  right: 20%;
+  animation-delay: 1s;
+}
+
+.sparkle-3 {
+  bottom: 30%;
+  left: 25%;
+  animation-delay: 2s;
+}
+
+/* Pop Particles */
+.pop-particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.pop-particles.active {
+  opacity: 1;
+}
+
+.particle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.particle-1 {
+  animation: popParticle1 0.8s ease-out forwards;
+}
+
+.particle-2 {
+  animation: popParticle2 0.8s ease-out forwards;
+}
+
+.particle-3 {
+  animation: popParticle3 0.8s ease-out forwards;
+}
+
+.particle-4 {
+  animation: popParticle4 0.8s ease-out forwards;
+}
+
+.particle-5 {
+  animation: popParticle5 0.8s ease-out forwards;
+}
+
+.particle-6 {
+  animation: popParticle6 0.8s ease-out forwards;
+}
+
+/* Confetti Container */
+.confetti-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.confetti-container.active {
+  opacity: 1;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--color);
+  transform: translate(-50%, -50%);
+  animation: confettiFall 1.5s ease-out forwards;
+  animation-delay: var(--delay);
+}
+
+.confetti-0 { transform: translate(-50%, -50%) rotate(0deg); }
+.confetti-1 { transform: translate(-50%, -50%) rotate(45deg); }
+.confetti-2 { transform: translate(-50%, -50%) rotate(90deg); }
+.confetti-3 { transform: translate(-50%, -50%) rotate(135deg); }
+.confetti-4 { transform: translate(-50%, -50%) rotate(180deg); }
+.confetti-5 { transform: translate(-50%, -50%) rotate(225deg); }
+.confetti-6 { transform: translate(-50%, -50%) rotate(270deg); }
+.confetti-7 { transform: translate(-50%, -50%) rotate(315deg); }
+
+/* Tap Hint */
+.tap-hint {
+  position: absolute;
+  bottom: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  opacity: 0.8;
+  animation: hintPulse 2s ease-in-out infinite;
+}
+
+.hint-text {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+  text-align: center;
+}
+
+.hint-sparkles {
+  font-size: 16px;
+  animation: sparkleShimmer 1.5s ease-in-out infinite;
+}
+
+/* Keyframe Animations */
+@keyframes balloonPopLottie {
+  0% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  20% {
+    transform: scale(1.2) rotate(5deg);
+    opacity: 0.9;
+  }
+  40% {
+    transform: scale(0.8) rotate(-3deg);
+    opacity: 0.8;
+  }
+  60% {
+    transform: scale(0.6) rotate(8deg);
+    opacity: 0.6;
+  }
+  80% {
+    transform: scale(0.3) rotate(-5deg);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(0.1) rotate(180deg);
+    opacity: 0;
+  }
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translate(-50%, -50%) scale(0) rotate(var(--rotation));
+    opacity: 1;
+  }
+  25% {
+    transform: translate(calc(-50% + var(--distance) * 0.25), calc(-50% - var(--distance) * 0.5)) scale(1) rotate(var(--rotation));
+    opacity: 1;
+  }
+  50% {
+    transform: translate(calc(-50% + var(--distance) * 0.5), calc(-50% - var(--distance) * 0.8)) scale(0.8) rotate(var(--rotation));
+    opacity: 0.8;
+  }
+  75% {
+    transform: translate(calc(-50% + var(--distance) * 0.75), calc(-50% - var(--distance) * 0.9)) scale(0.6) rotate(var(--rotation));
+    opacity: 0.5;
+  }
+  100% {
+    transform: translate(calc(-50% + var(--distance)), calc(-50% - var(--distance))) scale(0.4) rotate(var(--rotation));
+    opacity: 0;
+  }
+}
+
+@keyframes popParticle1 {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-80px, -60px) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes popParticle2 {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(80px, -60px) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes popParticle3 {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-60px, 80px) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes popParticle4 {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(60px, 80px) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes popParticle5 {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-40px, -40px) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes popParticle6 {
+  0% {
+    transform: translate(-50%, -50%) scale(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(40px, -40px) scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes sparkleFloat {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateY(-5px) scale(1.1);
+    opacity: 1;
+  }
+}
+
+@keyframes sparkleShimmer {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes hintPulse {
+  0%, 100% {
+    opacity: 0.6;
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(-50%) scale(1.05);
+  }
+}
+
+/* Balloon Message Page Specific Styles */
+.balloon-message-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  padding: 2rem;
+  text-align: center;
+}
+
+.balloon-instructions {
+  margin-bottom: 3rem;
+  max-width: 500px;
+}
+
+.balloon-instructions h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 1rem;
+  font-family: var(--font-inter);
+}
+
+.balloon-instructions p {
+  font-size: 1.1rem;
+  color: #64748b;
+  line-height: 1.6;
+  font-family: var(--font-inter);
+}
+
+.balloon-container-wrapper {
+  position: relative;
+  margin: 2rem 0;
+}
+
+.message-reveal-container {
+  margin-top: 2rem;
+  padding: 2rem;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  max-width: 600px;
+  animation: messageReveal 0.8s ease-out forwards;
+}
+
+@keyframes messageReveal {
+  0% {
+    opacity: 0;
+    transform: translateY(30px) scale(0.9);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes burstLine {
+  0% { 
+    transform: translate(-50%, -50%) scale(0) rotate(var(--rotation)); 
+    opacity: 1; 
+  }
+  50% { 
+    transform: translate(-50%, -50%) scale(1.2) rotate(var(--rotation)); 
+    opacity: 0.8; 
+  }
+  100% { 
+    transform: translate(-50%, -50%) scale(0) rotate(var(--rotation)); 
+    opacity: 0; 
+  }
+}
+
+/* Old Transition Pages - Tucked Away Styles */
+
+/* Tarot Cards Page Styles */
+.tarot-cards-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  padding: 2rem 0;
+}
+
+.tarot-instructions {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.tarot-instructions h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.tarot-instructions p {
+  font-size: 1rem;
+  color: #666;
+}
+
+.tarot-card-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+  perspective: 1000px;
+}
+
+.tarot-card {
+  width: 280px;
+  height: 400px;
+  position: relative;
+  transform-style: preserve-3d;
+  cursor: pointer;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.tarot-card:hover {
+  transform: translateY(-10px) rotateY(5deg);
+}
+
+.tarot-card.revealed {
+  transform: rotateY(180deg);
+}
+
+.card-back, .card-front {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 15px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.card-back {
+  background: linear-gradient(135deg, #2c3e50, #34495e);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-pattern {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.mystical-symbol {
+  font-size: 2rem;
+  animation: mysticalFloat 3s ease-in-out infinite;
+}
+
+.mystical-symbol:nth-child(2) {
+  animation-delay: 1s;
+}
+
+.mystical-symbol:nth-child(3) {
+  animation-delay: 2s;
+}
+
+.card-front {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  transform: rotateY(180deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.card-content {
+  text-align: center;
+}
+
+.card-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.card-message {
+  font-size: 1rem;
+  color: #495057;
+  line-height: 1.6;
+}
+
+/* Fortune Cookie Page Styles */
+.fortune-cookie-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  padding: 2rem 0;
+}
+
+.cookie-instructions {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.cookie-instructions h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.cookie-instructions p {
+  font-size: 1rem;
+  color: #666;
+}
+
+.cookie-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.fortune-cookie {
+  width: 200px;
+  height: 200px;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.fortune-cookie:hover {
+  transform: scale(1.05);
+}
+
+.fortune-cookie.cracked {
+  animation: cookieCrack 1.2s ease-out forwards;
+}
+
+.cookie-body {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #d4a574, #b8860b);
+  border-radius: 50%;
+  position: relative;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.cookie-texture {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+  border-radius: 50%;
+}
+
+.cookie-crack-line {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 4px;
+  height: 80%;
+  background: #8b4513;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.fortune-cookie.cracked .cookie-crack-line {
+  opacity: 1;
+}
+
+.fortune-paper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  height: 60%;
+  background: #fff;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+  transition-delay: 0.8s;
+}
+
+.fortune-cookie.cracked .fortune-paper {
+  opacity: 1;
+}
+
+.paper-content {
+  font-size: 0.9rem;
+  color: #333;
+  line-height: 1.4;
+  text-align: center;
+}
+
+/* Scratch Card Page Styles */
+.scratch-card-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2rem;
+  padding: 2rem 0;
+}
+
+.scratch-instructions {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.scratch-instructions h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 0.5rem;
+}
+
+.scratch-instructions p {
+  font-size: 1rem;
+  color: #666;
+}
+
+.scratch-card-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 300px;
+}
+
+.scratch-card {
+  width: 300px;
+  height: 200px;
+  position: relative;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.scratch-card:hover {
+  transform: scale(1.02);
+}
+
+.scratch-card.scratched {
+  animation: scratchReveal 1s ease-out forwards;
+}
+
+.scratch-layer, .message-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+}
+
+.scratch-layer {
+  background: linear-gradient(135deg, #6c757d, #495057);
+  z-index: 2;
+  transition: opacity 0.8s ease;
+}
+
+.scratch-card.scratched .scratch-layer {
+  opacity: 0;
+}
+
+.scratch-pattern {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  padding: 1rem;
+}
+
+.scratch-line {
+  height: 3px;
+  background: #adb5bd;
+  border-radius: 2px;
+  animation: scratchLine 0.5s ease-out forwards;
+}
+
+.scratch-line:nth-child(1) { animation-delay: 0.1s; }
+.scratch-line:nth-child(2) { animation-delay: 0.2s; }
+.scratch-line:nth-child(3) { animation-delay: 0.3s; }
+
+.message-layer {
+  background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.message-content {
+  font-size: 1rem;
+  color: #495057;
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* Message Actions Styles */
+.message-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.play-btn {
+  background: linear-gradient(135deg, #007bff, #0056b3);
+  color: white;
+}
+
+.play-btn:hover {
+  background: linear-gradient(135deg, #0056b3, #004085);
+  transform: translateY(-2px);
+}
+
+.another-btn {
+  background: linear-gradient(135deg, #28a745, #1e7e34);
+  color: white;
+}
+
+.another-btn:hover {
+  background: linear-gradient(135deg, #1e7e34, #155724);
+  transform: translateY(-2px);
+}
+
+.start-over-btn {
+  background: linear-gradient(135deg, #6c757d, #495057);
+  color: white;
+}
+
+.start-over-btn:hover {
+  background: linear-gradient(135deg, #495057, #343a40);
+  transform: translateY(-2px);
+}
+
+/* Keyframe Animations for Old Transitions */
+@keyframes mysticalFloat {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(5deg); }
+}
+
+@keyframes cookieCrack {
+  0% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.1) rotate(2deg); }
+  50% { transform: scale(1.05) rotate(-1deg); }
+  75% { transform: scale(1.02) rotate(1deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+@keyframes scratchReveal {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+@keyframes scratchLine {
+  0% { transform: scaleX(0); opacity: 1; }
+  100% { transform: scaleX(1); opacity: 0.3; }
+}
+
+/* Confetti Styles */
+.confetti-container {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1000;
+  transform: translate(-50%, -50%);
+}
+
+.confetti-container.active .confetti-piece {
+  animation: confettiFall 3s ease-out forwards;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 8px;
+  height: 8px;
+  opacity: 0;
+  transform: translate(-50%, -50%);
+}
+
+.confetti-piece.confetti-0 { background: #ff6b6b; }
+.confetti-piece.confetti-1 { background: #4ecdc4; }
+.confetti-piece.confetti-2 { background: #45b7d1; }
+.confetti-piece.confetti-3 { background: #96ceb4; }
+.confetti-piece.confetti-4 { background: #feca57; }
+.confetti-piece.confetti-5 { background: #ff9ff3; }
+.confetti-piece.confetti-6 { background: #54a0ff; }
+.confetti-piece.confetti-7 { background: #5f27cd; }
+
+@keyframes confettiFall {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(
+      calc(-50% + var(--distance)),
+      calc(-50% + var(--distance))
+    ) rotate(calc(var(--rotation) * 3)) scale(0.5);
+  }
+}
