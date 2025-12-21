@@ -1,23 +1,21 @@
 'use client';
 
-// Still Zone - Premium Mobile-First Login (No Navbar)
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
-import { motion } from 'framer-motion';
-import { Sparkles } from 'lucide-react';
+import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { toast } from 'sonner';
 import { supabase } from '@/lib/still-zone-supabase';
-import { useStillZoneAuth } from '@/store/still-zone-auth-store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import Logo from "@/assets/images/stillzonelogo.svg"
 
-export default function StillZoneLoginPage() {
+export default function LoginPage() {
   const router = useRouter();
-  const { initializeAuth } = useStillZoneAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,207 +25,228 @@ export default function StillZoneLoginPage() {
     setIsLoading(true);
 
     try {
-      const { isSupabaseConfigured } = await import('@/lib/still-zone-supabase');
-      if (!isSupabaseConfigured) {
-        setError('Supabase is not configured. Please set up your environment variables.');
+      // 1. Step: Check if email exists using our new RPC function
+      const { data: userExists, error: rpcError } = await supabase
+        .rpc('check_email_exists', { email_address: email });
+
+      if (rpcError) {
+        console.error("RPC Error:", rpcError);
+        toast.error("Something went wrong. Please try again.");
         setIsLoading(false);
         return;
       }
 
-      const { data, error: loginError } = await supabase.auth.signInWithPassword({ email, password });
-      if (loginError) {
-        setError(loginError.message);
+      // 2. Logic: If User DOES NOT exist, stop here.
+      if (!userExists) {
+        toast.error("Account not found. Please sign up first.");
         setIsLoading(false);
         return;
       }
 
-      if (data.user) {
-        await initializeAuth();
-        router.push('/still-zone/home');
+      // Case C (Attempt): Proceed with login
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (signInError) {
+        // Case B: Wrong Password (or other auth error)
+        if (signInError.message.includes('Invalid login credentials')) {
+          toast.error('Please enter the correct password.');
+        } else {
+          toast.error(signInError.message);
+        }
+        setIsLoading(false);
+        return;
       }
+
+      // Success
+      toast.success('Successfully logged in');
+      router.push('/still-zone/dashboard');
+
     } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+      console.error(err);
+      setError('An unexpected error occurred.');
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const handleStartTrial = () => {
-    // Navigate to signup or trial start page
-    // Note: You may need to create /still-zone/signup route
-    router.push('/still-zone/signup');
+  const handleGoogleLogin = async () => {
+    // For Google, we can't easily check existance BEFORE the popup without asking email first.
+    // We will proceed with standard OAuth, but rely on the callback/backend to handle "New User" cases if possible,
+    // OR we accept that for Google, "Sign In" might creating a user if Supabase is configured to allow it.
+    // The user requirement "Before authenticating, check if email associated..." is hard client-side.
+    // We'll implement the standard flow here.
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/still-zone/auth/callback?intent=login`,
+        },
+      });
+      if (error) setError(error.message);
+    } catch {
+      setError('Could not initiate Google login');
+    }
   };
 
   return (
-    <div className="relative min-h-screen flex flex-col items-center justify-center px-6 overflow-hidden bg-gradient-to-b from-teal-50 via-cyan-50/30 to-teal-50/50">
-      {/* Subtle background glows */}
-      <div className="pointer-events-none absolute inset-0">
-        <motion.div
-          className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-[#004851]/20 blur-3xl"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.6, scale: [1, 1.15, 1] }}
-          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
-        />
-        <motion.div
-          className="absolute -bottom-24 -right-16 w-[28rem] h-[28rem] rounded-full bg-[#006B7A]/15 blur-3xl"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 0.5, scale: [1, 1.2, 1] }}
-          transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-        />
+    <div className="min-h-screen w-full flex flex-col lg:flex-row bg-gradient-to-b from-teal-50 via-cyan-50/30 to-teal-50/50 lg:bg-none lg:bg-[#F9FAFB]">
+      {/* Right Side - Visual (Displayed first on mobile via order-first) */}
+      <div className="flex order-first lg:order-last w-full lg:w-1/2 bg-transparent lg:bg-gradient-to-b lg:from-teal-50 lg:via-cyan-50/30 lg:to-teal-50/50 items-center justify-center p-8 lg:p-12 min-h-[300px] lg:min-h-full">
+        <div className="relative w-full h-full max-w-lg lg:aspect-square flex flex-col items-center justify-center text-center">
+          {/* Content */}
+          <div className="z-10 flex flex-col items-center gap-4 lg:gap-6">
+            <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-full flex items-center justify-center z-20">
+              <img src={Logo.src} alt="" />
+            </div>
+            <div className="space-y-2 lg:space-y-4 max-w-[340px] z-20 relative">
+              <h1 className="text-2xl lg:text-4xl font-bold tracking-tight text-gray-900">
+                Welcome back to
+                <br />
+                <span className="text-[#006B7A]">Still Zone.</span>
+              </h1>
+              <p className="text-gray-500 text-sm lg:text-lg leading-relaxed">
+                Continue your journey to breathe, refocus, and reset.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
-  {/* Stack container (mobile-first) - Premium spacing with consistent rhythm */}
-    <div className="relative z-10 w-full max-w-[360px] md:max-w-[440px] lg:max-w-[520px] mx-auto flex flex-col items-center gap-10 lg:gap-6 px-6 py-12 sm:py-16 lg:py-10">
-        {/* Logo */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className="relative w-[60px] h-[60px]">
-            <Image
-              src="/Logo stilllift new.svg"
-              alt="Still Zone Logo"
-              fill
-              className="object-contain"
-              priority
-              onError={(e) => {
-                const t = e.target as HTMLImageElement;
-                t.style.display = 'none';
-                (t.parentElement as HTMLElement).innerHTML = '<div class=\'text-2xl font-bold bg-gradient-to-r from-[#004851] to-[#006B7A] bg-clip-text text-transparent\'>Still Zone</div>';
-              }}
-            />
-          </div>
-        </motion.div>
-
-  {/* Headline + Subtext block (controls headline->subtext spacing separately) */}
-    <div className="w-full flex flex-col items-center gap-8 lg:gap-6">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.05 }}
-            className="text-center font-bold text-3xl sm:text-4xl text-gray-900"
-          >
-            Find your calm
-            <br />
-            <span className="bg-gradient-to-r from-[#004851] to-[#006B7A] bg-clip-text text-transparent">— in just a minute.</span>
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-center text-gray-600 max-w-[300px] md:max-w-[420px] lg:max-w-[460px]"
-          >
-            Step into your personal guided space to breathe, refocus, and reset.
-          </motion.p>
-        </div>
-
-        {/* Form - 36px gap from subtext */}
-        <motion.form
-          onSubmit={handleLogin}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="w-full mt-9 lg:mt-6 flex flex-col gap-12 sm:gap-14 lg:gap-10"
-        >
-          {/* Email + Password container with 24px gap between fields */}
-            <div className="flex flex-col gap-6">
-            {/* Email field */}
-              <div className="flex flex-col gap-2 mb-2">
-              <Label htmlFor="email" className="text-gray-700">
-                Email Address
-              </Label>
-               
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                placeholder="you@example.com"
-                autoComplete="email"
-                className="h-12 rounded-xl bg-white/90 border-gray-200 focus:border-[#004851] focus:ring-[#004851]/20 pl-5 pr-4 py-3 placeholder:text-gray-400"
-              />  
-            </div>
-
-            {/* Password field */}
-              <div className="flex flex-col gap-2 mb-2">
-              <div className="flex items-center justify-between mb-1">
-                <Label htmlFor="password" className="text-gray-700">
-                  Password
-                </Label>
-              </div>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="••••••••"
-                autoComplete="current-password"
-                className="h-12 rounded-xl bg-white/90 border-gray-200 focus:border-[#004851] focus:ring-[#004851]/20 pl-5 pr-4 py-3 placeholder:text-gray-400"
-              />
-              {/* Forgot password link - positioned slightly lower so it visually sits below label row */}
-              <div className="flex justify-end mt-2">
-                <Link
-                  href="/forgot-password"
-                  className="text-sm text-teal-700/80 hover:text-teal-700 hover:underline transition-colors"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-            </div>
+      {/* Left Side - Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 lg:p-24 bg-transparent lg:bg-white">
+        <div className="w-full max-w-md space-y-8">
+          <div className="space-y-2 text-center lg:text-left">
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+              Sign in
+            </h1>
+            <p className="text-sm text-gray-500">
+              Enter your email below to sign in to your account
+            </p>
           </div>
 
-          {/* Error */}
-          {error && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="h-11 bg-white/60"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  {/* Forgot password link could go here */}
+                </div>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="h-11 bg-white/60 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 cursor-pointer focus:outline-none bg-transparent border-none"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {error && (
+              <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                {error}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              className="w-full h-11 bg-[#006B7A] hover:bg-[#005561] text-white font-medium shadow-none transition-colors"
+              disabled={isLoading}
             >
-              {error}
-            </motion.div>
-          )}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing In...
+                </>
+              ) : (
+                'Sign In'
+              )}
+            </Button>
+          </form>
 
-          {/* Submit Button - 32px gap from password section, mt-8 above button */}
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="w-full h-14 rounded-2xl bg-white text-[#004851] border border-[#004851]/30 hover:bg-teal-50 font-medium shadow-sm transition-all py-4"
-            size="lg"
-          >
-            {isLoading ? 'Signing In...' : 'Log In'}
-          </Button>
-        </motion.form>
-
-        {/* Divider + Trial Button - 32px gap from Log In button */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.3 }}
-          className="w-full mt-8 flex flex-col gap-6 sm:gap-8"
-        >
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
+              <span className="w-full border-t border-gray-200" />
             </div>
-            <div className="relative flex justify-center text-[11px] tracking-wide uppercase">
-              <span className="px-2 bg-transparent text-gray-500">Or</span>
+            <div className="relative flex justify-center text-xs">
+              <span className="px-2 text-black ">
+                Or continue with
+              </span>
             </div>
           </div>
-          <Button
-            onClick={handleStartTrial}
-            className="w-full h-14 rounded-2xl bg-gradient-to-r from-[#004851] to-[#006B7A] text-white font-medium hover:from-[#003A40] hover:to-[#005A66] shadow-lg shadow-[#004851]/20 transition-all py-4"
-            size="lg"
-            aria-label="Start 7 day free trial"
-          >
-            <Sparkles className="h-5 w-5 mr-2" aria-hidden="true" />
-            Start 7 day free trial
-          </Button>
-        </motion.div>
-      </div>
-    </div>
+
+          <div className="grid gap-3">
+            <Button
+              variant="outline"
+              className="h-11 bg-white/60"
+              onClick={handleGoogleLogin}
+              type="button"
+            >
+              <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  fill="#4285F4"
+                />
+                <path
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  fill="#34A853"
+                />
+                <path
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+                  fill="#FBBC05"
+                />
+                <path
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  fill="#EA4335"
+                />
+              </svg>
+              Sign in with Google
+            </Button>
+          </div>
+
+          <p className="text-center text-sm text-gray-500">
+            Don&apos;t have an account?{' '}
+            <Link
+              href="/still-zone/signup"
+              className="font-medium text-gray-900 hover:text-gray-700 underline underline-offset-4"
+            >
+              Sign up
+            </Link>
+          </p>
+        </div >
+      </div >
+
+    </div >
   );
 }
-

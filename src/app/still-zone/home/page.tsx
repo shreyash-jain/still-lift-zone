@@ -33,14 +33,14 @@ const CONTEXTS: { key: ContextKey; label: string; icon: string }[] = [
 
 export default function StillZoneHomePage() {
   const router = useRouter();
-  
+
   // Navbar state
   const [menuOpen, setMenuOpen] = useState(false);
   // Selections
   const [mood, setMood] = useState<MoodKey | null>(null);
   const [context, setContext] = useState<ContextKey | null>(null);
   const [time, setTime] = useState<number | null>(null);
-  
+
   // User preferences
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(false);
@@ -67,9 +67,9 @@ export default function StillZoneHomePage() {
       // Scroll to context on mobile
       if (isMobileOrTablet() && contextSectionRef.current) {
         setTimeout(() => {
-          contextSectionRef.current?.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' 
+          contextSectionRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
           });
         }, 100);
       }
@@ -85,9 +85,9 @@ export default function StillZoneHomePage() {
       // Scroll back to mood on mobile
       if (isMobileOrTablet() && moodSectionRef.current) {
         setTimeout(() => {
-          moodSectionRef.current?.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' 
+          moodSectionRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
           });
         }, 100);
       }
@@ -109,14 +109,14 @@ export default function StillZoneHomePage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       {/* Still Zone teal gradient background */}
-      <div 
-        className="fixed inset-0 pointer-events-none" 
+      <div
+        className="fixed inset-0 pointer-events-none"
         style={{
           background: 'linear-gradient(to bottom, #f0fdfa 0%, rgba(207, 250, 254, 0.3) 50%, rgba(240, 253, 250, 0.5) 100%)',
           zIndex: 0
         }}
       />
-      
+
       {/* Subtle background glows - Still Zone teal theme */}
       <div className="pointer-events-none absolute inset-0" style={{ zIndex: 1 }}>
         <motion.div
@@ -204,8 +204,8 @@ export default function StillZoneHomePage() {
           >
             {/* Header with close button */}
             <div className="flex-shrink-0 p-6 pb-4">
-              <button 
-                className="self-end" 
+              <button
+                className="self-end"
                 onClick={() => setMenuOpen(false)}
                 aria-label="Close menu"
               >
@@ -231,8 +231,8 @@ export default function StillZoneHomePage() {
                 </div>
 
                 {/* Dashboard */}
-                <a 
-                  href="#" 
+                <a
+                  href="#"
                   className="flex items-start gap-4 rounded-lg p-4 hover:bg-slate-50 transition-colors"
                 >
                   <span className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-md bg-teal-600/10 text-teal-600">
@@ -245,8 +245,8 @@ export default function StillZoneHomePage() {
                 </a>
 
                 {/* Profile */}
-                <a 
-                  href="#" 
+                <a
+                  href="#"
                   className="flex items-start gap-4 rounded-lg p-4 hover:bg-slate-50 transition-colors"
                 >
                   <span className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-md bg-teal-600/10 text-teal-600">
@@ -259,8 +259,8 @@ export default function StillZoneHomePage() {
                 </a>
 
                 {/* Logout */}
-                <a 
-                  href="#" 
+                <a
+                  href="#"
                   className="flex items-start gap-4 rounded-lg p-4 hover:bg-slate-50 transition-colors"
                 >
                   <span className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-md bg-teal-600/10 text-teal-600">
@@ -283,7 +283,7 @@ export default function StillZoneHomePage() {
           <div className="container">
             {/* Instructions Section - matching Still Lift */}
             <div className="instructions-section">
-              <h1 
+              <h1
                 className="instruction-text"
                 style={{
                   backgroundImage: 'linear-gradient(to right, rgb(13, 148, 136), rgb(16, 185, 129))',

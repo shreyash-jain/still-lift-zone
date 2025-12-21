@@ -7,6 +7,7 @@ import ThemeProvider from "@/components/ThemeProvider";
 import ScrollRestorationManager from "@/components/ScrollRestorationManager";
 import { Suspense } from "react";
 import { AudioControllerProvider } from "@/context/AudioControllerContext";
+import { Toaster } from "@/components/ui/sonner";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -61,7 +62,7 @@ export default function RootLayout({
         `}</Script>
       </head>
       <body
-        className={`${inter.variable} ${jetbrainsMono.variable} ${dancingScript.variable} antialiased font-inter`}
+        className={`${inter.variable} ${jetbrainsMono.variable} ${dancingScript.variable} antialiased font-inter h-max`}
         style={
           {
             "--font-inter": inter.style.fontFamily,
@@ -74,6 +75,7 @@ export default function RootLayout({
           <AudioControllerProvider>
             <ScrollRestorationManager />
             <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+            <Toaster position="top-center" />
           </AudioControllerProvider>
         </ThemeProvider>
       </body>
