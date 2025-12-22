@@ -1,0 +1,16 @@
+<svg width="754" height="760" viewBox="0 0 754 760" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M377 104.5C530.954 104.5 655.5 227.764 655.5 379.5C655.5 531.236 530.954 654.5 377 654.5C223.046 654.5 98.5 531.236 98.5 379.5C98.5 227.764 223.046 104.5 377 104.5Z" stroke="url(#paint0_linear_70_90)" stroke-opacity="0.8" stroke-width="25"/>
+<ellipse cx="298.5" cy="502" rx="46" ry="112.5" transform="rotate(90 298.5 502)" fill="#629093"/>
+<ellipse cx="457.5" cy="502" rx="46" ry="115.5" transform="rotate(90 457.5 502)" fill="#629093"/>
+<circle cx="377" cy="203" r="40" fill="#004851"/>
+<path d="M378.5 536.5C367.5 535 337.5 525.5 318.5 456.5C318.5 456 346.5 496 379.5 460C396.008 478.009 411.515 476.874 422.892 471.242C429.902 467.366 436.248 462.198 441.5 455.5C434 490.5 397.5 534.5 378.5 536.5Z" fill="#3F6D6A"/>
+<ellipse cx="350.5" cy="362.5" rx="58.5" ry="112.5" transform="rotate(-180 350.5 362.5)" fill="#2E5653"/>
+<ellipse cx="408.5" cy="362.5" rx="58.5" ry="112.5" transform="rotate(-180 408.5 362.5)" fill="#88ADA8"/>
+<path d="M379.5 265C397.123 284.382 409 320.887 409 362.726C409 404.564 397.123 441.068 379.5 460.45C361.877 441.068 350 404.564 350 362.726C350 320.887 361.877 284.382 379.5 265Z" fill="#477170"/>
+<defs>
+<linearGradient id="paint0_linear_70_90" x1="622.165" y1="646.464" x2="163.966" y2="97.591" gradientUnits="userSpaceOnUse">
+<stop stop-color="#8DBBC1"/>
+<stop offset="1" stop-color="#004851"/>
+</linearGradient>
+</defs>
+</svg>
