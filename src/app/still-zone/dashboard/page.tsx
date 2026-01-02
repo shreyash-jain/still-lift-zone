@@ -1,11 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import logoStillliftNew from '@/../public/Logo stilllift new.svg';
+import logoStillliftDark from '@/../public/Logo stilllift - dark theme.png';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
   Menu, X,
-  CloudRain, Cloud, Wind, BatteryLow, Target, Sparkles,
   ShieldCheck, Bike, BrainCircuit
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -14,6 +16,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/lib/still-zone-supabase';
 import { toast } from 'sonner';
 import { TokenKey, removeAuthorizationCookie } from '@/lib/auth-utils';
+import Background from '@/components/Background';
 
 // First screen after successful login for Still Zone
 // Mobile-first, calm, minimal UI built with TailwindCSS
@@ -26,21 +29,21 @@ type MoodKey =
   | 'focus'
   | 'curious';
 
-const MOODS: { key: MoodKey; label: string; icon: React.ElementType; color: string }[] = [
-  { key: 'overwhelmed', label: 'Overwhelmed / Stressed', icon: CloudRain, color: 'text-blue-500' },
-  { key: 'sad', label: 'Sad / Low Mood', icon: Cloud, color: 'text-indigo-400' },
-  { key: 'anxious', label: 'Anxious / Restless', icon: Wind, color: 'text-teal-500' },
-  { key: 'tired', label: 'Tired / Burned Out', icon: BatteryLow, color: 'text-orange-400' },
-  { key: 'focus', label: 'Seeking Focus', icon: Target, color: 'text-rose-500' },
-  { key: 'curious', label: 'Just Curious', icon: Sparkles, color: 'text-amber-400' },
+const MOODS: { key: MoodKey; label: string; emoji: string }[] = [
+  { key: 'overwhelmed', label: 'Overwhelmed / Stressed', emoji: '🤯' },
+  { key: 'sad', label: 'Sad / Low Mood', emoji: '😔' },
+  { key: 'anxious', label: 'Anxious / Restless', emoji: '😰' },
+  { key: 'tired', label: 'Tired / Burned Out', emoji: '😫' },
+  { key: 'focus', label: 'Seeking Focus', emoji: '🎯' },
+  { key: 'curious', label: 'Just Curious', emoji: '✨' },
 ];
 
 type ContextKey = 'still-safe' | 'move-safe' | 'move-focused';
 
-const CONTEXTS: { key: ContextKey; label: string; description: string; icon: React.ElementType }[] = [
-  { key: 'still-safe', label: 'Still and Safe', description: 'At home or a quiet safe space', icon: ShieldCheck },
-  { key: 'move-safe', label: 'On the Move, but Safe', description: 'Walking, commuting (passenger)', icon: Bike },
-  { key: 'move-focused', label: 'On the Move and Focused', description: 'Driving, active commuting', icon: BrainCircuit },
+const CONTEXTS: { key: ContextKey; label: string; description?: string; emoji: string }[] = [
+  { key: 'still-safe', label: 'Still & Safe Place', description: 'At home or a quiet safe space', emoji: '🪑' },
+  { key: 'move-safe', label: 'On the Move, but Safe', description: 'Walking, commuting (passenger)', emoji: '🚶' },
+  { key: 'move-focused', label: 'On the Move and Actively Focused', description: 'Driving, active commuting', emoji: '🎯' },
 ];
 
 const TIME_OPTIONS = [1, 2, 3, 5];
@@ -53,18 +56,49 @@ export default function StillZoneDashboardPage() {
   const [mood, setMood] = useState<MoodKey>('overwhelmed');
   const [context, setContext] = useState<ContextKey>('still-safe');
   const [time, setTime] = useState<number>(3);
+  const [scrolled, setScrolled] = useState(false);
+
+  // Handle scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 transition-colors duration-300">
+      <Background />
       {/* NAVBAR */}
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 transition-all">
+      <header className={cn(
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+        scrolled ? "bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm border-b border-slate-200 dark:border-slate-800" : "bg-transparent"
+      )}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-16 flex justify-between items-center">
           {/* Left: Logo + Title */}
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-400 to-emerald-500 shadow-sm flex items-center justify-center text-white font-bold text-sm">
-              SZ
+            <div className="relative w-9 h-9">
+              <Image
+                src={logoStillliftNew}
+                alt="Still Lift Logo"
+                fill
+                className="object-contain dark:hidden"
+                priority
+              />
+              <Image
+                src={logoStillliftDark}
+                alt="Still Lift Logo"
+                fill
+                className="object-contain hidden dark:block"
+                priority
+              />
             </div>
-            <span className="text-slate-900 dark:text-white font-bold text-lg tracking-tight">Still Zone</span>
+            <span className={cn(
+              "font-bold text-lg tracking-tight transition-colors",
+              // scrolled ? "text-slate-900 dark:text-white" : "text-slate-900 dark:text-white"
+              "text-slate-900 dark:text-white"
+            )}>Still Zone</span>
           </div>
 
           {/* Right: Hamburger */}
@@ -156,48 +190,32 @@ export default function StillZoneDashboardPage() {
           </motion.p>
         </section>
 
-        {/* MOOD GRID - Updated with Cards */}
+        {/* MOOD GRID - Updated with Still Lift CSS Styles */}
         <section>
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-            {MOODS.map((m, idx) => {
-              const selected = mood === m.key;
-              const Icon = m.icon;
-              return (
-                <motion.div
-                  key={m.key}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: idx * 0.05 }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Card
-                    className={cn(
-                      "cursor-pointer transition-all duration-300 border-2 overflow-hidden relative group h-full",
-                      selected
-                        ? "border-teal-500 bg-teal-50/50 dark:bg-teal-900/20 shadow-md ring-1 ring-teal-500/20"
-                        : "border-transparent border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 hover:border-slate-300 dark:hover:border-slate-700 shadow-sm"
-                    )}
+          <div className="mood-section">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+              {MOODS.map((m) => {
+                const selected = mood === m.key;
+                return (
+                  <button
+                    key={m.key}
+                    type="button"
                     onClick={() => setMood(m.key)}
+                    className={cn(
+                      "mood-btn glass-card w-full transition-all duration-300 focus:outline-none focus:ring-0",
+                      selected
+                        ? "!border-2 !border-teal-500 dark:!border-teal-400 !bg-[var(--glass-card-bg)] !shadow-sm !outline-none !ring-0"
+                        : "hover:!border-teal-200 dark:hover:!border-teal-800"
+                    )}
                   >
-                    <CardContent className="p-5 flex flex-col items-center justify-center text-center gap-3 h-full">
-                      <div className={cn(
-                        "p-3 rounded-full transition-colors",
-                        selected ? "bg-white dark:bg-slate-900 shadow-sm" : "bg-slate-100 dark:bg-slate-700 group-hover:bg-white dark:group-hover:bg-slate-600"
-                      )}>
-                        <Icon className={cn("w-7 h-7", m.color)} />
-                      </div>
-                      <span className={cn(
-                        "font-semibold text-sm sm:text-base",
-                        selected ? "text-slate-900 dark:text-slate-100" : "text-slate-600 dark:text-slate-300"
-                      )}>
-                        {m.label}
-                      </span>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              );
-            })}
+                    <div className="mood-content">
+                      <span className="mood-emoji">{m.emoji}</span>
+                      <span className="mood-text font-inter">{m.label}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </section>
 
@@ -208,37 +226,28 @@ export default function StillZoneDashboardPage() {
               <span className="w-1 h-6 bg-teal-500 rounded-full" />
               Choose your context
             </h2>
-            <div className="space-y-3">
+            <div className="context-section space-y-3">
               {CONTEXTS.map((c) => {
                 const selected = context === c.key;
-                const Icon = c.icon;
                 return (
                   <button
                     key={c.key}
                     type="button"
                     onClick={() => setContext(c.key)}
                     className={cn(
-                      "w-full text-left rounded-xl p-4 transition-all duration-200 flex items-start gap-4 border-2 group",
+                      "context-btn glass-card w-full transition-all duration-300 focus:outline-none focus:ring-0",
                       selected
-                        ? "border-teal-500 bg-white dark:bg-slate-800 shadow-md"
-                        : "border-transparent bg-white dark:bg-slate-800 shadow-sm hover:border-slate-200 dark:hover:border-slate-700"
+                        ? "!border-2 !border-teal-500 dark:!border-teal-400 !bg-[var(--glass-card-bg)] !shadow-sm !outline-none !ring-0"
+                        : "hover:!border-teal-200 dark:hover:!border-teal-800"
                     )}
                   >
-                    <div className={cn(
-                      "mt-1 p-2 rounded-lg transition-colors",
-                      selected ? "bg-teal-50 dark:bg-teal-900/30 text-teal-600 dark:text-teal-400" : "bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-600"
-                    )}>
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <div className={cn(
-                        "font-semibold text-base transition-colors",
-                        selected ? "text-teal-900 dark:text-teal-100" : "text-slate-900 dark:text-slate-100"
-                      )}>
-                        {c.label}
-                      </div>
-                      <div className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                        {c.description}
+                    <div className="flex items-center gap-4">
+                      <span className="text-3xl filter drop-shadow-sm">{c.emoji}</span>
+                      <div className="text-left w-full">
+                        <span className="context-text font-inter block text-lg font-medium !text-left">{c.label}</span>
+                        {c.description && (
+                          <span className="context-subtitle text-sm opacity-80 block font-normal !text-left">{c.description}</span>
+                        )}
                       </div>
                     </div>
                   </button>
@@ -250,11 +259,11 @@ export default function StillZoneDashboardPage() {
           {/* TIME SELECTION */}
           <section className="space-y-5">
             <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <span className="w-1 h-6 bg-rose-500 rounded-full" />
+              <span className="w-1 h-6 bg-teal-500 rounded-full" />
               Current Availability
             </h2>
 
-            <div className="p-6 rounded-2xl bg-white dark:bg-slate-800 shadow-sm border border-slate-100 dark:border-slate-700 space-y-6">
+            <div className="p-6 glass-card space-y-6">
               <p className="text-slate-600 dark:text-slate-300">
                 How much time do you have for this session?
               </p>
@@ -267,26 +276,20 @@ export default function StillZoneDashboardPage() {
                       key={t}
                       onClick={() => setTime(t)}
                       className={cn(
-                        "relative py-3 px-2 rounded-xl text-center transition-all duration-200 font-medium text-sm sm:text-base border-2",
+                        "relative py-3 px-2 rounded-xl text-center transition-all duration-300 font-medium text-sm sm:text-base border-2 glass-card focus:outline-none focus:ring-0",
                         selected
-                          ? "border-rose-500 bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-300 shadow-sm"
-                          : "border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50"
+                          ? "!border-teal-500 dark:!border-teal-400 !bg-[var(--glass-card-bg)] !shadow-sm !outline-none !ring-0"
+                          : "border-transparent hover:!border-teal-200 dark:hover:!border-teal-800"
                       )}
                     >
                       {t} min
-                      {selected && (
-                        <motion.div
-                          layoutId="activeTime"
-                          className="absolute inset-0 rounded-xl border-2 border-rose-500 pointer-events-none"
-                        />
-                      )}
                     </button>
                   );
                 })}
               </div>
 
               <div className="pt-2">
-                <Button className="w-full h-12 text-base rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200 shadow-lg hover:shadow-xl transition-all">
+                <Button className="w-full h-12 text-base rounded-xl bg-teal-600 text-white font-semibold hover:bg-teal-700 active:bg-teal-800 transition-all shadow-md border-transparent">
                   Start Session
                 </Button>
               </div>
