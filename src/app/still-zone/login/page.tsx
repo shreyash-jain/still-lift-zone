@@ -39,6 +39,7 @@ export default function LoginPage() {
       // 2. Logic: If User DOES NOT exist, stop here.
       if (!userExists) {
         toast.error("Account not found. Please sign up first.");
+        router.push('/still-zone/signup');
         setIsLoading(false);
         return;
       }
@@ -62,7 +63,7 @@ export default function LoginPage() {
 
       // Success
       toast.success('Successfully logged in');
-      router.push('/still-zone/dashboard');
+      router.push('/still-zone');
 
     } catch (err) {
       console.error(err);
@@ -151,6 +152,7 @@ export default function LoginPage() {
                 <div className="relative">
                   <Input
                     id="password"
+                    placeholder="Enter your password"
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}

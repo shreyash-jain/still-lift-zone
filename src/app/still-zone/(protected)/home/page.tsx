@@ -372,8 +372,8 @@ export default function StillZoneHomePage() {
                     <option value="">Select duration</option>
                     <option value={1}>1 minute</option>
                     <option value={2}>2 minutes</option>
-                    <option value={3}>3 minutes</option>
                     <option value={5}>5 minutes</option>
+                    <option value={10}>10 minutes</option>
                   </select>
                 </div>
               </div>

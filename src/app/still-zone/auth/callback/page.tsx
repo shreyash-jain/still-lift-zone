@@ -39,6 +39,14 @@ export default function AuthCallbackPage() {
                     return;
                 }
 
+                // STRICT CHECK: Block new users from "Signing In" (if they don't exist)
+                if (intent === 'login' && isNewUser) {
+                    await supabase.auth.signOut();
+                    toast.error('Account not found. Please sign up first.');
+                    router.replace('/still-zone/signup');
+                    return;
+                }
+
                 // Set cookies
                 setAuthorizationCookie(TokenKey.access_token, session.access_token);
                 if (session.refresh_token) {
@@ -54,7 +62,7 @@ export default function AuthCallbackPage() {
                     hasShownToast.current = true;
                 }
 
-                router.replace('/still-zone/dashboard');
+                router.replace('/still-zone');
             } else {
                 if (!hasShownToast.current) {
                     toast.error('No session found. Please try again.');
