@@ -29,7 +29,7 @@ export default function Home() {
   const [selectedContext, setSelectedContext] = useState<string | null>(null);
   const [showReveal, setShowReveal] = useState(false);
   const [isRevealed, setIsRevealed] = useState(false);
-  
+
   const {
     isDarkMode,
     audioEnabled,
@@ -105,13 +105,13 @@ export default function Home() {
       localStorage.setItem('currentMood', mood);
       // Track mood selection
       trackMoodSelected(mood);
-      
+
       // Scroll to context section on mobile/tablet
       if (isMobileOrTablet() && contextSectionRef.current) {
         setTimeout(() => {
-          contextSectionRef.current?.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' 
+          contextSectionRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
           });
         }, 100);
       }
@@ -129,13 +129,13 @@ export default function Home() {
       localStorage.setItem('currentContext', context);
       // Track context selection
       trackContextSelected(context);
-      
+
       // Scroll back to mood section on mobile/tablet (vice versa)
       if (isMobileOrTablet() && moodSectionRef.current) {
         setTimeout(() => {
-          moodSectionRef.current?.scrollIntoView({ 
-            behavior: 'smooth', 
-            block: 'start' 
+          moodSectionRef.current?.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
           });
         }, 100);
       }
@@ -147,10 +147,10 @@ export default function Home() {
     // Prevent double initialization
     if (hasInitializedRef.current) return;
     hasInitializedRef.current = true;
-    
+
     // Initialize analytics
     initAnalytics();
-    
+
     // Clear any existing selections to start fresh
     localStorage.removeItem('currentMood');
     localStorage.removeItem('currentContext');
@@ -165,12 +165,12 @@ export default function Home() {
     if (selectedMood && selectedContext) {
       // Track mood-context combination
       trackMoodContextCombination(selectedMood, selectedContext);
-      
+
       // Small delay to show the selection state before revealing
       const timer = setTimeout(() => {
         setShowReveal(true);
       }, 500);
-      
+
       return () => clearTimeout(timer);
     }
   }, [selectedMood, selectedContext]);
@@ -182,7 +182,7 @@ export default function Home() {
       if (showReveal) return;
 
       const target = event.target as HTMLElement;
-      
+
       // Check if click is outside mood buttons
       if (
         moodButtonsRef.current &&
@@ -198,7 +198,7 @@ export default function Home() {
           localStorage.removeItem('currentMood');
         }
       }
-      
+
       // Check if click is outside context buttons
       if (
         contextButtonsRef.current &&
@@ -260,17 +260,17 @@ export default function Home() {
       return 'treasure-chest';
     };
 
-  const getRevealToken = (mood: string, context: string): string => {
-    // Card glyph for move/focused; emoji tokens for still context per mood
-    if (context === 'move' || context === 'focused') {
+    const getRevealToken = (mood: string, context: string): string => {
+      // Card glyph for move/focused; emoji tokens for still context per mood
+      if (context === 'move' || context === 'focused') {
+        return '🎴';
+      }
+      if (mood === 'good') return '💎'; // treasure chest theme
+      if (mood === 'okay') return '🎈'; // balloon/confetti theme
+      if (mood === 'bad') return '📩'; // envelope/message theme
+      if (mood === 'awful') return '🩹'; // bandage/prescription theme
       return '🎴';
-    }
-    if (mood === 'good') return '💎'; // treasure chest theme
-    if (mood === 'okay') return '🎈'; // balloon/confetti theme
-    if (mood === 'bad') return '📩'; // envelope/message theme
-    if (mood === 'awful') return '🩹'; // bandage/prescription theme
-    return '🎴';
-  };
+    };
 
     const getAccentColor = (actionType: string): string => {
       if (actionType === 'VISUALIZE') return '#8B5CF6'; // Purple
@@ -311,19 +311,19 @@ export default function Home() {
       revealToken,
       revealType,
       accentColor,
-    animationSpeed: animationSpeed as 'rich' | 'quick' | 'gentle' | 'instant',
-    audioIndex
+      animationSpeed: animationSpeed as 'rich' | 'quick' | 'gentle' | 'instant',
+      audioIndex
     };
   };
 
   // Track when to force a new random selection (for "Try Another" button)
   const [forceRefresh, setForceRefresh] = useState(0);
-  
+
   // Track the previous message to avoid showing the same message twice
   // Key includes mood+context to reset when switching combinations
   const previousMessageRef = useRef<ContentMessage | null>(null);
   const previousMoodContextRef = useRef<string>('');
-  
+
   // Reset previous message when mood/context changes
   useEffect(() => {
     const currentKey = `${selectedMood || ''}-${selectedContext || ''}`;
@@ -332,14 +332,14 @@ export default function Home() {
       previousMoodContextRef.current = currentKey;
     }
   }, [selectedMood, selectedContext]);
-  
+
   // Memoize selectedMicroHabit to prevent random message selection on every render
   // This ensures display text and audio always match
   // forceRefresh is included to allow forcing a new selection when "Try Another" is clicked
   const selectedMicroHabit = useMemo(() => {
     // Get the previous message before calling getMicroHabit
     const previousMessage = previousMessageRef.current;
-    
+
     // Log for debugging
     if (previousMessage) {
       console.log('[page] Getting new message, excluding previous:', {
@@ -347,9 +347,9 @@ export default function Home() {
         previousAudioIndex: previousMessage.audioIndex
       });
     }
-    
+
     const microHabit = getMicroHabit(previousMessage);
-    
+
     // Update the previous message ref after getting a new one
     if (microHabit) {
       // Reconstruct the ContentMessage from the microHabit data
@@ -359,11 +359,11 @@ export default function Home() {
         displayTime: 0, // Not used for comparison
         audioIndex: microHabit.audioIndex
       };
-      
+
       // Verify it's different from the previous message
-      if (previousMessage && 
-          currentMessage.message === previousMessage.message && 
-          currentMessage.audioIndex === previousMessage.audioIndex) {
+      if (previousMessage &&
+        currentMessage.message === previousMessage.message &&
+        currentMessage.audioIndex === previousMessage.audioIndex) {
         console.warn('[page] WARNING: Same message was selected again!', {
           message: currentMessage.message,
           audioIndex: currentMessage.audioIndex
@@ -374,10 +374,10 @@ export default function Home() {
           audioIndex: currentMessage.audioIndex
         });
       }
-      
+
       previousMessageRef.current = currentMessage;
     }
-    
+
     return microHabit;
   }, [selectedMood, selectedContext, forceRefresh]);
 
@@ -480,16 +480,16 @@ export default function Home() {
 
     const animationDuration = selectedMicroHabit.animationSpeed === 'instant' ? 100 :
       selectedMicroHabit.animationSpeed === 'quick' ? 300 :
-      selectedMicroHabit.animationSpeed === 'gentle' ? 800 : 600;
+        selectedMicroHabit.animationSpeed === 'gentle' ? 800 : 600;
 
     setTimeout(() => {
       setIsRevealed(true);
       recordRevealAnalytics();
 
       // Skip audio playback for 'playing-card' and 'treasure-chest' - they handle their own audio
-      if (audioEnabled && !screenlessMode && taskAudioPayload && 
-          selectedMicroHabit.revealType !== 'treasure-chest' && 
-          selectedMicroHabit.revealType !== 'playing-card') {
+      if (audioEnabled && !screenlessMode && taskAudioPayload &&
+        selectedMicroHabit.revealType !== 'treasure-chest' &&
+        selectedMicroHabit.revealType !== 'playing-card') {
         // Ensure no previous audio (homepage or task) leaks through
         stopHomepageAudio();
         stopTaskAudio();
@@ -658,7 +658,7 @@ export default function Home() {
           {/* No navbar button on home; contextual back below activities */}
         </div>
       )}
-      
+
       <Header
         isDarkMode={isDarkMode}
         audioEnabled={audioEnabled}
@@ -691,7 +691,7 @@ export default function Home() {
                       <h2 className="font-inter font-semibold">How are you feeling today?</h2>
                     </div>
                     <div className="mood-buttons" ref={moodButtonsRef}>
-                      <button 
+                      <button
                         className={`mood-btn glass-card ${selectedMood === 'good' ? 'selected' : 'good'}`}
                         onClick={() => handleMoodSelection('good')}
                         data-mood="good"
@@ -702,7 +702,7 @@ export default function Home() {
                         </div>
 
                       </button>
-                      <button 
+                      <button
                         className={`mood-btn glass-card ${selectedMood === 'okay' ? 'selected' : 'okay'}`}
                         onClick={() => handleMoodSelection('okay')}
                         data-mood="okay"
@@ -713,7 +713,7 @@ export default function Home() {
                         </div>
 
                       </button>
-                      <button 
+                      <button
                         className={`mood-btn glass-card ${selectedMood === 'bad' ? 'selected' : 'bad'}`}
                         onClick={() => handleMoodSelection('bad')}
                         data-mood="bad"
@@ -724,7 +724,7 @@ export default function Home() {
                         </div>
 
                       </button>
-                      <button 
+                      <button
                         className={`mood-btn glass-card ${selectedMood === 'awful' ? 'selected' : 'awful'}`}
                         onClick={() => handleMoodSelection('awful')}
                         data-mood="awful"
@@ -744,7 +744,7 @@ export default function Home() {
                       <h2 className="font-inter font-semibold">Where are you right now?</h2>
                     </div>
                     <div className="context-buttons" ref={contextButtonsRef}>
-                      <button 
+                      <button
                         className={`context-btn glass-card ${selectedContext === 'still' ? 'selected' : 'still'}`}
                         onClick={() => handleContextSelection('still')}
                         data-context="still"
@@ -755,18 +755,18 @@ export default function Home() {
                         </div>
 
                       </button>
-                      <button 
+                      <button
                         className={`context-btn glass-card ${selectedContext === 'move' ? 'selected' : 'move'}`}
                         onClick={() => handleContextSelection('move')}
                         data-context="move"
                       >
                         <div className="context-content">
                           <span className="context-icon">🚶</span>
-                          <span className="context-text font-inter font-medium">On the Move, but Safe</span>
+                          <span className="context-text font-inter font-medium text-xl">On the Move, but Safe</span>
                         </div>
 
                       </button>
-                      <button 
+                      <button
                         className={`context-btn glass-card ${selectedContext === 'focused' ? 'selected' : 'focused'}`}
                         onClick={() => handleContextSelection('focused')}
                         data-context="focused"
@@ -787,23 +787,23 @@ export default function Home() {
               <>
                 {/* Reveal Experience */}
                 <div className="reveal-container">
-                  {selectedMicroHabit?.revealType !== 'balloon-pop' && 
-                   !(selectedMicroHabit?.revealType === 'playing-card' && (selectedContext === 'move' || selectedContext === 'focused')) && (
-                    <div className="reveal-header">
-                      <h2 className="font-inter font-semibold text-slate-900 dark:text-slate-100">
-                        Your Personalized Experience
-                      </h2>
-                      <p className="reveal-subtitle font-inter text-slate-600 dark:text-slate-300">
-                        Based on your mood: <span className="font-medium capitalize">{selectedMood}</span> • 
-                        Location: <span className="font-medium">
-                          {selectedContext === 'still' ? 'Still & Safe Place' : 
-                           selectedContext === 'move' ? 'On the Move, but Safe' : 
-                           'On the Move and focused'}
-                        </span>
-                      </p>
-                    </div>
-                  )}
-                  
+                  {selectedMicroHabit?.revealType !== 'balloon-pop' &&
+                    !(selectedMicroHabit?.revealType === 'playing-card' && (selectedContext === 'move' || selectedContext === 'focused')) && (
+                      <div className="reveal-header">
+                        <h2 className="font-inter font-semibold text-slate-900 dark:text-slate-100">
+                          Your Personalized Experience
+                        </h2>
+                        <p className="reveal-subtitle font-inter text-slate-600 dark:text-slate-300">
+                          Based on your mood: <span className="font-medium capitalize">{selectedMood}</span> •
+                          Location: <span className="font-medium">
+                            {selectedContext === 'still' ? 'Still & Safe Place' :
+                              selectedContext === 'move' ? 'On the Move, but Safe' :
+                                'On the Move and focused'}
+                          </span>
+                        </p>
+                      </div>
+                    )}
+
                   {/* Render the computed reveal type based on mood/context mapping */}
                   <RevealElement
                     revealType={selectedMicroHabit?.revealType || 'playing-card'}

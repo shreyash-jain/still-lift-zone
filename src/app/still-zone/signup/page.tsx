@@ -57,6 +57,7 @@ export default function SignupPage() {
             // 2. Logic: If User ALREADY exists, stop here.
             if (userExists) {
                 toast.error("Account found with this email. Please just sign in.");
+                router.push('/still-zone/login');
                 setIsLoading(false);
                 return;
             }
@@ -85,7 +86,7 @@ export default function SignupPage() {
                     className: 'font-medium',
                 });
 
-                router.push('/still-zone/dashboard');
+                router.push('/still-zone');
             } else {
                 // Check email case (if email confirmation is on)
                 setError('Please check your email to confirm your account.');
@@ -174,6 +175,7 @@ export default function SignupPage() {
                                         <Input
                                             id="password"
                                             type={showPassword ? "text" : "password"}
+                                            placeholder="Enter your password"
                                             value={password}
                                             onChange={(e) => setPassword(e.target.value)}
                                             required
@@ -199,6 +201,7 @@ export default function SignupPage() {
                                         <Input
                                             id="confirmPassword"
                                             type={showConfirmPassword ? "text" : "password"}
+                                            placeholder="Enter your password"
                                             value={confirmPassword}
                                             onChange={(e) => setConfirmPassword(e.target.value)}
                                             required
