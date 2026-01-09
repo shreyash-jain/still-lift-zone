@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from 'sonner';
 import { supabase } from '@/lib/still-zone-supabase';
+import { FormFieldWithIcon } from '@/components/still-zone';
 
 // Initial empty state
 const INITIAL_USER = {
@@ -146,56 +147,37 @@ export default function ProfilePage() {
                         </div>
 
                         <div className="grid gap-6 max-w-xl">
-                            <div className="space-y-2">
-                                <Label htmlFor="name">Full Name</Label>
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400">
-                                        <User className="w-4 h-4" />
-                                    </div>
-                                    <Input
-                                        id="name"
-                                        value={formData.name}
-                                        disabled={!isEditing}
-                                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                        className="pl-10"
-                                        placeholder="Enter your name"
-                                    />
-                                </div>
-                            </div>
+                            <FormFieldWithIcon
+                                id="name"
+                                label="Full Name"
+                                value={formData.name}
+                                onChange={(value) => setFormData({ ...formData, name: value })}
+                                icon={User}
+                                placeholder="Enter your name"
+                                disabled={!isEditing}
+                            />
 
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email Address</Label>
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400">
-                                        <Mail className="w-4 h-4" />
-                                    </div>
-                                    <Input
-                                        id="email"
-                                        value={formData.email}
-                                        disabled={!isEditing}
-                                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                        className="pl-10"
-                                        placeholder="Enter your email"
-                                    />
-                                </div>
-                            </div>
+                            <FormFieldWithIcon
+                                id="email"
+                                label="Email Address"
+                                value={formData.email}
+                                onChange={(value) => setFormData({ ...formData, email: value })}
+                                icon={Mail}
+                                placeholder="Enter your email"
+                                disabled={!isEditing}
+                                type="email"
+                            />
 
-                            <div className="space-y-2">
-                                <Label htmlFor="phone">Phone Number</Label>
-                                <div className="relative">
-                                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-slate-400">
-                                        <Phone className="w-4 h-4" />
-                                    </div>
-                                    <Input
-                                        id="phone"
-                                        value={formData.phone}
-                                        disabled={!isEditing}
-                                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                                        className="pl-10"
-                                        placeholder="Enter your phone number"
-                                    />
-                                </div>
-                            </div>
+                            <FormFieldWithIcon
+                                id="phone"
+                                label="Phone Number"
+                                value={formData.phone}
+                                onChange={(value) => setFormData({ ...formData, phone: value })}
+                                icon={Phone}
+                                placeholder="Enter your phone number"
+                                disabled={!isEditing}
+                                type="tel"
+                            />
 
                             <div className="space-y-2">
                                 <Label htmlFor="bio">Bio</Label>

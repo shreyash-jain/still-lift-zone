@@ -2,13 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { AnimatePresence, motion } from 'framer-motion';
-import {
-  ShieldCheck, Bike, BrainCircuit
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/lib/still-zone-supabase';
+import { SelectionCard, PageHeader, SectionHeader } from '@/components/still-zone';
 
 // First screen after successful login for Still Zone
 // Mobile-first, calm, minimal UI built with TailwindCSS
@@ -41,7 +36,7 @@ const CONTEXTS: { key: ContextKey; label: string; description?: string; emoji: s
 const TIME_OPTIONS = [1, 2, 5, 10];
 
 export default function StillZoneDashboardPage() {
-  const router = useRouter(); // Kept if needed for future logic, though mostly handled by header now
+  const router = useRouter();
   // Selections
   const [mood, setMood] = useState<MoodKey>('overwhelmed');
   const [context, setContext] = useState<ContextKey>('still-safe');
@@ -52,49 +47,25 @@ export default function StillZoneDashboardPage() {
     <main className="max-w-4xl mx-auto px-4 sm:px-6 pt-24 pb-12 space-y-12">
 
       {/* HERO SECTION */}
-      <section className="text-center space-y-3 max-w-2xl mx-auto">
-        <motion.h1
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight"
-        >
-          How are you feeling today?
-        </motion.h1>
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="text-slate-500 dark:text-slate-400 text-lg"
-        >
-          Select your current state to begin a personalized session.
-        </motion.p>
-      </section>
+      <PageHeader
+        title="How are you feeling today?"
+        subtitle="Select your current state to begin a personalized session."
+      />
 
-      {/* MOOD GRID - Updated with Still Lift CSS Styles */}
+      {/* MOOD GRID */}
       <section>
         <div className="mood-section">
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
-            {MOODS.map((m) => {
-              const selected = mood === m.key;
-              return (
-                <button
-                  key={m.key}
-                  type="button"
-                  onClick={() => setMood(m.key)}
-                  className={cn(
-                    "mood-btn glass-card w-full transition-all duration-300 focus:outline-none focus:ring-0",
-                    selected
-                      ? "!border-2 !border-teal-500 dark:!border-teal-400 !bg-[var(--glass-card-bg)] !shadow-sm !outline-none !ring-0"
-                      : "hover:!border-teal-200 dark:hover:!border-teal-800"
-                  )}
-                >
-                  <div className="mood-content">
-                    <span className="mood-emoji">{m.emoji}</span>
-                    <span className="mood-text font-inter">{m.label}</span>
-                  </div>
-                </button>
-              );
-            })}
+            {MOODS.map((m) => (
+              <SelectionCard
+                key={m.key}
+                selected={mood === m.key}
+                onClick={() => setMood(m.key)}
+                emoji={m.emoji}
+                label={m.label}
+                variant="mood"
+              />
+            ))}
           </div>
         </div>
       </section>
@@ -102,46 +73,25 @@ export default function StillZoneDashboardPage() {
       <div className="grid md:grid-cols-2 gap-8 md:gap-12">
         {/* CONTEXT SELECTION */}
         <section className="space-y-5">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <span className="w-1 h-6 bg-teal-500 rounded-full" />
-            Choose your context
-          </h2>
+          <SectionHeader title="Choose your context" />
           <div className="context-section space-y-3">
-            {CONTEXTS.map((c) => {
-              const selected = context === c.key;
-              return (
-                <button
-                  key={c.key}
-                  type="button"
-                  onClick={() => setContext(c.key)}
-                  className={cn(
-                    "context-btn glass-card w-full transition-all duration-300 focus:outline-none focus:ring-0",
-                    selected
-                      ? "!border-2 !border-teal-500 dark:!border-teal-400 !bg-[var(--glass-card-bg)] !shadow-sm !outline-none !ring-0"
-                      : "hover:!border-teal-200 dark:hover:!border-teal-800"
-                  )}
-                >
-                  <div className="flex items-center gap-5 p-2">
-                    <span className="text-5xl filter drop-shadow-sm">{c.emoji}</span>
-                    <div className="text-left w-full">
-                      <span className="context-text font-inter block text-2xl font-semibold !text-left leading-tight mb-1">{c.label}</span>
-                      {c.description && (
-                        <span className="context-subtitle text-base opacity-80 block font-normal !text-left">{c.description}</span>
-                      )}
-                    </div>
-                  </div>
-                </button>
-              );
-            })}
+            {CONTEXTS.map((c) => (
+              <SelectionCard
+                key={c.key}
+                selected={context === c.key}
+                onClick={() => setContext(c.key)}
+                emoji={c.emoji}
+                label={c.label}
+                description={c.description}
+                variant="context"
+              />
+            ))}
           </div>
         </section>
 
         {/* TIME SELECTION */}
         <section className="space-y-5">
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <span className="w-1 h-6 bg-teal-500 rounded-full" />
-            Current Availability
-          </h2>
+          <SectionHeader title="Current Availability" />
 
           <div className="p-6 glass-card space-y-6">
             <p className="text-slate-600 dark:text-slate-300">
@@ -149,23 +99,15 @@ export default function StillZoneDashboardPage() {
             </p>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {TIME_OPTIONS.map((t) => {
-                const selected = time === t;
-                return (
-                  <button
-                    key={t}
-                    onClick={() => setTime(t)}
-                    className={cn(
-                      "relative py-3 px-2 rounded-xl text-center transition-all duration-300 font-medium text-sm sm:text-base border-2 glass-card focus:outline-none focus:ring-0",
-                      selected
-                        ? "!border-teal-500 dark:!border-teal-400 !bg-[var(--glass-card-bg)] !shadow-sm !outline-none !ring-0"
-                        : "border-transparent hover:!border-teal-200 dark:hover:!border-teal-800"
-                    )}
-                  >
-                    {t} min
-                  </button>
-                );
-              })}
+              {TIME_OPTIONS.map((t) => (
+                <SelectionCard
+                  key={t}
+                  selected={time === t}
+                  onClick={() => setTime(t)}
+                  label={`${t} min`}
+                  variant="time"
+                />
+              ))}
             </div>
 
             <div className="pt-2">

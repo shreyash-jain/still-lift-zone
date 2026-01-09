@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import {
-    BarChart3, User, Settings, LogOut,
-    Wind, Music, Brain, Sparkles, Trophy, Calendar, X
+    Wind, Music, Brain, Sparkles, Trophy, User
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/lib/still-zone-supabase';
+import { StatCard, ToolCard, BadgeCard, MoodTrackerGrid } from '@/components/still-zone';
 
 export default function DashboardPage() {
     const [userName, setUserName] = useState('');
@@ -53,58 +52,9 @@ export default function DashboardPage() {
                         </div>
                     </CardHeader>
                     <CardContent>
-                        <div className="flex flex-col gap-6">
-                            {/* Flex Grid for 7 Days */}
-                            <div className="grid grid-cols-7 gap-2 sm:gap-4 text-center">
-                                {/* Days Header */}
-                                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-                                    <div key={day} className="text-xs sm:text-sm font-medium text-slate-500">{day}</div>
-                                ))}
-
-                                {/* Dot Matrix Rows */}
-                                {/* Row 1 */}
-                                {[1, 2, 0, 3, 3, 3, 2].map((level, i) => (
-                                    <div key={`r1-${i}`} className="flex items-center justify-center h-8">
-                                        {level > 0 ? (
-                                            <span className="text-xl sm:text-2xl leading-none filter drop-shadow-sm transition-transform hover:scale-110 cursor-default">
-                                                {level === 1 ? '🙂' : level === 2 ? '😐' : '😔'}
-                                            </span>
-                                        ) : (
-                                            <X className="w-5 h-5 text-red-500 dark:text-red-400" />
-                                        )}
-                                    </div>
-                                ))}
-
-                                {/* Row 2 */}
-                                {[0, 2, 2, 0, 2, 2, 3].map((level, i) => (
-                                    <div key={`r2-${i}`} className="flex items-center justify-center h-8">
-                                        {level > 0 ? (
-                                            <span className="text-xl sm:text-2xl leading-none filter drop-shadow-sm transition-transform hover:scale-110 cursor-default">
-                                                {level === 1 ? '🙂' : level === 2 ? '😐' : '😔'}
-                                            </span>
-                                        ) : (
-                                            <X className="w-5 h-5 text-red-500 dark:text-red-400" />
-                                        )}
-                                    </div>
-                                ))}
-
-                                {/* Row 3 */}
-                                {[3, 3, 2, 1, 1, 3, 0].map((level, i) => (
-                                    <div key={`r3-${i}`} className="flex items-center justify-center h-8">
-                                        {level > 0 ? (
-                                            <span className="text-xl sm:text-2xl leading-none filter drop-shadow-sm transition-transform hover:scale-110 cursor-default">
-                                                {level === 1 ? '🙂' : level === 2 ? '😐' : '😔'}
-                                            </span>
-                                        ) : (
-                                            <X className="w-5 h-5 text-red-500 dark:text-red-400" />
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-
-                            <div className="flex justify-end pt-2">
-                                <Button className="bg-sky-600 hover:bg-sky-700 text-white shadow-sm">View Trends</Button>
-                            </div>
+                        <MoodTrackerGrid />
+                        <div className="flex justify-end pt-2">
+                            <Button className="bg-sky-600 hover:bg-sky-700 text-white shadow-sm">View Trends</Button>
                         </div>
                     </CardContent>
                 </Card>
@@ -116,32 +66,28 @@ export default function DashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            {/* Statistic 1 */}
-                            <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                                <div className="p-2 mb-2 bg-blue-100 dark:bg-blue-900/30 rounded-full text-blue-600 dark:text-blue-400">
-                                    <User className="w-5 h-5" />
-                                </div>
-                                <span className="text-2xl font-bold text-slate-900 dark:text-white">6</span>
-                                <span className="text-xs text-slate-500 font-medium">Sessions This Week</span>
-                            </div>
-
-                            {/* Statistic 2 */}
-                            <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                                <div className="p-2 mb-2 bg-rose-100 dark:bg-rose-900/30 rounded-full text-rose-600 dark:text-rose-400">
-                                    <Sparkles className="w-5 h-5" />
-                                </div>
-                                <span className="text-2xl font-bold text-slate-900 dark:text-white">28 <span className="text-sm font-normal text-slate-400">min</span></span>
-                                <span className="text-xs text-slate-500 font-medium">Minutes Calm</span>
-                            </div>
-
-                            {/* Statistic 3 */}
-                            <div className="flex flex-col items-center justify-center p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-                                <div className="p-2 mb-2 bg-green-100 dark:bg-green-900/30 rounded-full text-green-600 dark:text-green-400">
-                                    <Trophy className="w-5 h-5" />
-                                </div>
-                                <span className="text-2xl font-bold text-green-600">+3</span>
-                                <span className="text-xs text-slate-500 font-medium">Mood Improvement</span>
-                            </div>
+                            <StatCard
+                                icon={User}
+                                value="6"
+                                label="Sessions This Week"
+                                iconColor="text-blue-600 dark:text-blue-400"
+                                iconBgColor="bg-blue-100 dark:bg-blue-900/30"
+                            />
+                            <StatCard
+                                icon={Sparkles}
+                                value={<>28 <span className="text-sm font-normal text-slate-400">min</span></>}
+                                label="Minutes Calm"
+                                iconColor="text-rose-600 dark:text-rose-400"
+                                iconBgColor="bg-rose-100 dark:bg-rose-900/30"
+                            />
+                            <StatCard
+                                icon={Trophy}
+                                value="+3"
+                                label="Mood Improvement"
+                                iconColor="text-green-600 dark:text-green-400"
+                                iconBgColor="bg-green-100 dark:bg-green-900/30"
+                                valueColor="text-green-600"
+                            />
                         </div>
                     </CardContent>
                 </Card>
@@ -153,35 +99,27 @@ export default function DashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <Button variant="outline" className="h-auto py-4 flex flex-col items-center justify-center gap-3 text-slate-700 bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300 hover:shadow-md transition-all duration-300">
-                                <div className="w-10 h-10 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center text-cyan-600 dark:text-cyan-400">
-                                    <Wind className="w-5 h-5" />
-                                </div>
-                                <div className="text-center">
-                                    <div className="font-semibold">Breathing</div>
-                                    <div className="text-xs text-slate-400 font-normal">Relaxation</div>
-                                </div>
-                            </Button>
-
-                            <Button variant="outline" className="h-auto py-4 flex flex-col items-center justify-center gap-3 text-slate-700 bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300 hover:shadow-md transition-all duration-300">
-                                <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-                                    <Music className="w-5 h-5" />
-                                </div>
-                                <div className="text-center">
-                                    <div className="font-semibold">Audio</div>
-                                    <div className="text-xs text-slate-400 font-normal">Soothing</div>
-                                </div>
-                            </Button>
-
-                            <Button variant="outline" className="h-auto py-4 flex flex-col items-center justify-center gap-3 text-slate-700 bg-white border-slate-200 hover:bg-slate-50 hover:border-slate-300 hover:shadow-md transition-all duration-300">
-                                <div className="w-10 h-10 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-violet-600 dark:text-violet-400">
-                                    <Brain className="w-5 h-5" />
-                                </div>
-                                <div className="text-center">
-                                    <div className="font-semibold">Micro Tool</div>
-                                    <div className="text-xs text-slate-400 font-normal">NLP Focus</div>
-                                </div>
-                            </Button>
+                            <ToolCard
+                                icon={Wind}
+                                title="Breathing"
+                                subtitle="Relaxation"
+                                iconColor="text-cyan-600 dark:text-cyan-400"
+                                iconBgColor="bg-cyan-100 dark:bg-cyan-900/30"
+                            />
+                            <ToolCard
+                                icon={Music}
+                                title="Audio"
+                                subtitle="Soothing"
+                                iconColor="text-indigo-600 dark:text-indigo-400"
+                                iconBgColor="bg-indigo-100 dark:bg-indigo-900/30"
+                            />
+                            <ToolCard
+                                icon={Brain}
+                                title="Micro Tool"
+                                subtitle="NLP Focus"
+                                iconColor="text-violet-600 dark:text-violet-400"
+                                iconBgColor="bg-violet-100 dark:bg-violet-900/30"
+                            />
                         </div>
                     </CardContent>
                 </Card>
@@ -221,28 +159,22 @@ export default function DashboardPage() {
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                            {/* Badge 1 */}
-                            <div className="flex flex-col items-center text-center gap-2">
-                                <div className="w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center relative shadow-sm">
-                                    <span className="text-2xl">👍</span>
-                                    <div className="absolute bottom-0 right-0 w-5 h-5 bg-slate-700 rounded-full border-2 border-white dark:border-slate-900" />
-                                </div>
-                                <span className="font-bold text-sm text-slate-700 dark:text-slate-300">Calm Streak</span>
-                            </div>
-                            {/* Badge 2 */}
-                            <div className="flex flex-col items-center text-center gap-2">
-                                <div className="w-16 h-16 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center relative shadow-sm">
-                                    <span className="text-2xl">⭐</span>
-                                </div>
-                                <span className="font-bold text-sm text-slate-700 dark:text-slate-300">Mindful Explorer</span>
-                            </div>
-                            {/* Badge 3 */}
-                            <div className="flex flex-col items-center text-center gap-2">
-                                <div className="w-16 h-16 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center relative shadow-sm">
-                                    <span className="text-2xl">🌟</span>
-                                </div>
-                                <span className="font-bold text-sm text-slate-700 dark:text-slate-300">Focus Master</span>
-                            </div>
+                            <BadgeCard
+                                emoji="👍"
+                                title="Calm Streak"
+                                locked={true}
+                                bgColor="bg-amber-100 dark:bg-amber-900/30"
+                            />
+                            <BadgeCard
+                                emoji="⭐"
+                                title="Mindful Explorer"
+                                bgColor="bg-cyan-100 dark:bg-cyan-900/30"
+                            />
+                            <BadgeCard
+                                emoji="🌟"
+                                title="Focus Master"
+                                bgColor="bg-indigo-100 dark:bg-indigo-900/30"
+                            />
                             {/* Weekly Reflection */}
                             <div className="flex flex-col gap-3 p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                                 <h4 className="font-bold text-sm text-slate-700 dark:text-slate-300 text-center">Weekly Reflection</h4>
