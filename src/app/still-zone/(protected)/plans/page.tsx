@@ -1,88 +1,172 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Star, Crown, Zap, Shield, ArrowLeft } from 'lucide-react';
+import { Check, Star, Crown, Zap, Shield, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { useRouter } from 'next/navigation';
+import Script from 'next/script';
+import { useRazorpayCheckout } from '@/hooks/useRazorpayCheckout';
+import { usePaymentStatus } from '@/hooks/usePaymentStatus';
+import { supabase } from '@/lib/still-zone-supabase';
 
 type Currency = 'USD' | 'INR';
 
-interface PricingTier {
+// Icon mapping
+const ICON_MAP: Record<string, React.ElementType> = {
+    zap: Zap,
+    star: Star,
+    crown: Crown,
+};
+
+interface PaymentPlan {
     id: string;
-    name: string;
-    description: string;
-    price: { USD: string; INR: string };
-    period: string; // e.g., '/ month', '/ year', 'one-time'
+    plan_key: string;
+    plan_name: string;
+    description: string | null;
+    price_inr: number;
+    price_usd: number;
+    duration_type: string;
+    duration_days: number;
+    trial_days: number;
     features: string[];
-    highlight?: boolean;
-    highlightText?: string;
-    badge?: React.ReactNode;
-    icon: React.ElementType;
-    ctaText: string;
-    trialText?: string;
+    is_highlighted: boolean;
+    highlight_text: string | null;
+    icon_name: string | null;
 }
 
-const PRICING_TIERS: PricingTier[] = [
-    {
-        id: 'monthly',
-        name: 'Mindful',
-        description: 'Flexible access for those exploring mindfulness.',
-        price: { USD: '$4.99', INR: '₹199' },
-        period: '/ month',
-        icon: Zap,
-        features: [
-            'Unlimited Experience sessions',
-            'Full Premium Dashboard access',
-            'Progress tracking & mood history',
-            'Cancel anytime',
-        ],
-        ctaText: 'Start Monthly',
-    },
-    {
-        id: 'yearly',
-        name: 'Serenity',
-        description: 'Our most popular plan for long-term peace.',
-        price: { USD: '$49.99', INR: '₹1,799' },
-        period: '/ year',
-        highlight: true,
-        highlightText: 'Best Value',
-        icon: Star,
-        features: [
-            'Everything in Mindful',
-            'Save significant amount yearly',
-            'Priority Email Support',
-            '7-Day Free Trial included',
-        ],
-        ctaText: 'Start Free Trial',
-        trialText: '7 days free, then billing begins',
-    },
-    {
-        id: 'founder',
-        name: 'Founder',
-        description: 'Exclusive 5-year pass for early adopters.',
-        price: { USD: '$149.99', INR: '₹5,999' },
-        period: 'one-time',
-        icon: Crown,
-        features: [
-            '5-Year Full Access',
-            'Early access to new features',
-            'Exclusive Founder Badge',
-            'No recurring payments',
-        ],
-        ctaText: 'Get Founder Pass',
-        badge: <Badge variant="outline" className="border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-900/20">Limited Time</Badge>
-    }
-];
-
 export default function PlansPage() {
-    const router = useRouter();
     const [currency, setCurrency] = useState<Currency>('INR');
+    const [plans, setPlans] = useState<PaymentPlan[]>([]);
+    const [isLoadingPlans, setIsLoadingPlans] = useState(true);
+    const [selectedPlanKey, setSelectedPlanKey] = useState<string | null>(null);
+    const [userId, setUserId] = useState<string | undefined>(undefined);
+    const [userInfo, setUserInfo] = useState<{ name?: string; email?: string; phone?: string }>({});
+
+    const { initiateCheckout, isLoading: isCheckoutLoading } = useRazorpayCheckout();
+    const { status, isActive, daysRemaining } = usePaymentStatus(userId);
+
+    // Get user ID and profile info
+    useEffect(() => {
+        const getUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                setUserId(user.id);
+                // Extract profile info for Razorpay prefill
+                setUserInfo({
+                    name: user.user_metadata?.full_name || user.user_metadata?.name || '',
+                    email: user.email || '',
+                    phone: user.phone || user.user_metadata?.phone || '',
+                });
+            }
+        };
+        getUser();
+    }, []);
+
+    // Fetch plans from API
+    useEffect(() => {
+        const fetchPlans = async () => {
+            try {
+                const response = await fetch('/still-zone/api/razorpay/plans');
+                const data = await response.json();
+                if (data.success) {
+                    setPlans(data.plans);
+                }
+            } catch (error) {
+                console.error('Failed to fetch plans:', error);
+            } finally {
+                setIsLoadingPlans(false);
+            }
+        };
+        fetchPlans();
+    }, []);
+
+    // Format amount from smallest unit
+    const formatPrice = (amount: number, curr: Currency): string => {
+        const value = amount / 100;
+        const symbol = curr === 'INR' ? '₹' : '$';
+        return `${symbol}${value.toLocaleString('en-IN')}`;
+    };
+
+    // Get period text
+    const getPeriodText = (durationType: string): string => {
+        switch (durationType) {
+            case 'monthly':
+                return '/ month';
+            case 'yearly':
+                return '/ year';
+            case 'one_time':
+            case 'lifetime':
+                return 'one-time';
+            default:
+                return '';
+        }
+    };
+
+    // Handle payment
+    const handlePayment = async (plan: PaymentPlan) => {
+        setSelectedPlanKey(plan.plan_key);
+
+        await initiateCheckout({
+            planKey: plan.plan_key,
+            currency: currency,
+            userInfo: userInfo,
+            onSuccess: (response) => {
+                console.log('Payment successful:', response);
+                setSelectedPlanKey(null);
+            },
+            onFailure: (error) => {
+                console.error('Payment failed:', error);
+                setSelectedPlanKey(null);
+            },
+        });
+    };
+
+    // Show current subscription status banner
+    const renderSubscriptionBanner = () => {
+        if (!userId || status === 'loading') return null;
+
+        if (isActive) {
+            return (
+                <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-gradient-to-r from-teal-500 to-emerald-500 text-white rounded-xl p-4 mb-8 flex items-center justify-between"
+                >
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                            <Check className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <p className="font-semibold">You have an active subscription!</p>
+                            <p className="text-sm text-white/80">
+                                {daysRemaining !== null && `${daysRemaining} days remaining`}
+                            </p>
+                        </div>
+                    </div>
+                    <Badge variant="secondary" className="bg-white/20 text-white border-0">
+                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </Badge>
+                </motion.div>
+            );
+        }
+
+        return null;
+    };
+
+    if (isLoadingPlans) {
+        return (
+            <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-24 pb-12 flex items-center justify-center min-h-[60vh]">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="w-10 h-10 animate-spin text-teal-600" />
+                    <p className="text-slate-500">Loading plans...</p>
+                </div>
+            </main>
+        );
+    }
 
     return (
         <main className="max-w-7xl mx-auto px-4 sm:px-6 pt-24 pb-12 space-y-12">
@@ -118,14 +202,20 @@ export default function PlansPage() {
                 </div>
             </div>
 
+            {/* Subscription Status Banner */}
+            {renderSubscriptionBanner()}
+
             {/* Pricing Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-                {PRICING_TIERS.map((tier, index) => {
-                    const isHighlight = tier.highlight;
+                {plans.map((plan, index) => {
+                    const isHighlight = plan.is_highlighted;
+                    const IconComponent = ICON_MAP[plan.icon_name || 'zap'] || Zap;
+                    const price = currency === 'INR' ? plan.price_inr : plan.price_usd;
+                    const isSelected = selectedPlanKey === plan.plan_key;
 
                     return (
                         <motion.div
-                            key={tier.id}
+                            key={plan.id}
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: index * 0.1 + 0.2 }}
@@ -137,7 +227,7 @@ export default function PlansPage() {
                             {isHighlight && (
                                 <div className="absolute -top-4 left-0 right-0 flex justify-center z-10">
                                     <span className="bg-teal-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md uppercase tracking-wide">
-                                        {tier.highlightText}
+                                        {plan.highlight_text || 'Best Value'}
                                     </span>
                                 </div>
                             )}
@@ -150,30 +240,34 @@ export default function PlansPage() {
                             )}>
                                 <CardHeader className="text-center pb-8">
                                     <div className="mx-auto w-12 h-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4 text-slate-900 dark:text-white">
-                                        <tier.icon className="w-6 h-6" />
+                                        <IconComponent className="w-6 h-6" />
                                     </div>
                                     <CardTitle className="text-xl font-bold text-slate-900 dark:text-white mb-2 flex flex-col items-center gap-2">
-                                        {tier.name}
-                                        {tier.badge}
+                                        {plan.plan_name}
+                                        {plan.highlight_text && plan.plan_key === 'founder' && (
+                                            <Badge variant="outline" className="border-amber-500 text-amber-600 bg-amber-50 dark:bg-amber-900/20">
+                                                {plan.highlight_text}
+                                            </Badge>
+                                        )}
                                     </CardTitle>
                                     <CardDescription className="text-sm min-h-[40px]">
-                                        {tier.description}
+                                        {plan.description}
                                     </CardDescription>
                                 </CardHeader>
 
                                 <CardContent className="flex-1 flex flex-col gap-6">
                                     <div className="text-center">
                                         <span className={cn("text-4xl font-extrabold tracking-tight", isHighlight ? "text-teal-600 dark:text-teal-400" : "text-slate-900 dark:text-white")}>
-                                            {tier.price[currency]}
+                                            {formatPrice(price, currency)}
                                         </span>
                                         <span className="text-slate-500 font-medium ml-1">
-                                            {tier.period}
+                                            {getPeriodText(plan.duration_type)}
                                         </span>
                                     </div>
 
                                     <div className="space-y-3">
-                                        {tier.features.map((feature) => (
-                                            <div key={feature} className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-300">
+                                        {plan.features.map((feature, idx) => (
+                                            <div key={idx} className="flex items-start gap-3 text-sm text-slate-600 dark:text-slate-300">
                                                 <Check className="w-5 h-5 text-teal-500 shrink-0" />
                                                 <span>{feature}</span>
                                             </div>
@@ -183,6 +277,8 @@ export default function PlansPage() {
 
                                 <CardFooter className="flex flex-col gap-3 pt-6 bg-slate-50/50 dark:bg-slate-800/30">
                                     <Button
+                                        onClick={() => handlePayment(plan)}
+                                        disabled={isCheckoutLoading || isActive}
                                         className={cn(
                                             "w-full rounded-xl h-12 font-semibold text-base shadow-sm transition-all active:scale-95",
                                             isHighlight
@@ -190,14 +286,25 @@ export default function PlansPage() {
                                                 : "bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 hover:border-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-white dark:border-slate-700"
                                         )}
                                     >
-                                        {tier.ctaText}
+                                        {isSelected && isCheckoutLoading ? (
+                                            <span className="flex items-center gap-2">
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                Processing...
+                                            </span>
+                                        ) : isActive ? (
+                                            'Already Subscribed'
+                                        ) : plan.trial_days > 0 ? (
+                                            'Start Free Trial'
+                                        ) : (
+                                            `Get ${plan.plan_name}`
+                                        )}
                                     </Button>
-                                    {tier.trialText && (
+                                    {plan.trial_days > 0 && (
                                         <p className="text-xs text-center text-teal-600 dark:text-teal-400 font-medium">
-                                            {tier.trialText}
+                                            {plan.trial_days} days free, then billing begins
                                         </p>
                                     )}
-                                    {!tier.trialText && (
+                                    {!plan.trial_days && (
                                         <p className="text-xs text-center text-slate-400 h-4">
                                             {/* Spacer/Empty for alignment */}
                                         </p>
@@ -217,6 +324,7 @@ export default function PlansPage() {
                 </div>
             </div>
 
+            <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
         </main>
     );
 }

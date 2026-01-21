@@ -56,7 +56,7 @@ export default function StillZoneExperiencePage() {
   const supportContent = SUPPORT_MESSAGES[supportType] || SUPPORT_MESSAGES['immediate-advice'];
 
   const handleStartOver = () => {
-    router.push('/still-zone/home');
+    router.push('/still-zone');
   };
 
   const handleTryAnother = () => {
