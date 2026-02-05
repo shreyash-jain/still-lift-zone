@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import Script from 'next/script';
+import { useRouter } from 'next/navigation';
 import { useRazorpayCheckout } from '@/hooks/useRazorpayCheckout';
 import { usePaymentStatus } from '@/hooks/usePaymentStatus';
 import { supabase } from '@/lib/still-zone-supabase';
@@ -39,6 +40,7 @@ interface PaymentPlan {
 }
 
 export default function PlansPage() {
+    const router = useRouter();
     const [currency, setCurrency] = useState<Currency>('INR');
     const [plans, setPlans] = useState<PaymentPlan[]>([]);
     const [isLoadingPlans, setIsLoadingPlans] = useState(true);
@@ -117,6 +119,8 @@ export default function PlansPage() {
             onSuccess: (response) => {
                 console.log('Payment successful:', response);
                 setSelectedPlanKey(null);
+                // Redirect to still-zone after successful payment
+                router.push('/still-zone');
             },
             onFailure: (error) => {
                 console.error('Payment failed:', error);
