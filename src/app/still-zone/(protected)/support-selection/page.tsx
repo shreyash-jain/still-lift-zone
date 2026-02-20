@@ -1,34 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Brain, Headphones, Lightbulb, User, BookOpen, Wind } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import { SUPPORT_OPTIONS } from '@/lib/still-zone-config';
 
-type SupportType = 'visual-breathing' | 'audio-tool' | 'immediate-advice' | 'havening' | 'nlp-micro' | 'resources';
-
-const SUPPORT_TYPES: { key: SupportType; label: string; icon: React.ElementType; description: string; color: string; bg: string }[] = [
-  { key: 'visual-breathing', label: 'Visual Breathing', icon: Wind, description: 'Guided breathing exercises', color: 'text-cyan-600 dark:text-cyan-400', bg: 'bg-cyan-100 dark:bg-cyan-900/30' },
-  { key: 'audio-tool', label: 'Audio Tool', icon: Headphones, description: 'Calming audio guidance', color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-100 dark:bg-indigo-900/30' },
-  { key: 'immediate-advice', label: 'Immediate Advice', icon: Lightbulb, description: 'Quick helpful tips', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/30' },
-  { key: 'havening', label: 'Havening Technique', icon: User, description: 'Self-soothing practice', color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-100 dark:bg-rose-900/30' },
-  { key: 'nlp-micro', label: 'NLP Micro Tool', icon: Brain, description: 'Mental reframing exercises', color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-100 dark:bg-violet-900/30' },
-  { key: 'resources', label: 'Suggested Resources', icon: BookOpen, description: 'Curated materials', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/30' },
-];
+// Map icon names from config to actual Lucide components
+const ICON_MAP: Record<string, React.ElementType> = {
+  Wind, Headphones, Lightbulb, User, Brain, BookOpen,
+};
 
 export default function SupportSelectionPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [selectedSupport, setSelectedSupport] = useState<SupportType | null>(null);
+  const [selectedSupport, setSelectedSupport] = useState<string | null>(null);
 
-  // Get user selections from URL params
-  const mood = searchParams.get('mood');
-  const context = searchParams.get('context');
-  const time = searchParams.get('time');
+  // Sanitize URL params — treat "null"/"undefined"/empty as missing
+  const sanitize = (v: string | null) => (!v || v === 'null' || v === 'undefined') ? null : v.trim();
+  const mood = sanitize(searchParams.get('mood'));
+  const context = sanitize(searchParams.get('context'));
+  const time = sanitize(searchParams.get('time'));
 
-  const handleSupportSelection = (supportType: SupportType) => {
+  // If params are missing, redirect back to start the flow properly
+  useEffect(() => {
+    if (!mood || !context || !time) {
+      router.replace('/still-zone/home');
+    }
+  }, [mood, context, time, router]);
+
+  const handleSupportSelection = (supportType: string) => {
+    if (!mood || !context || !time) return; // Guard
     setSelectedSupport(supportType);
     // Navigate to the selected support experience
     setTimeout(() => {
@@ -37,8 +41,9 @@ export default function SupportSelectionPage() {
   };
 
   const handleRandomSelection = () => {
-    const randomIndex = Math.floor(Math.random() * SUPPORT_TYPES.length);
-    const randomSupport = SUPPORT_TYPES[randomIndex].key;
+    if (!mood || !context || !time) return; // Guard
+    const randomIndex = Math.floor(Math.random() * SUPPORT_OPTIONS.length);
+    const randomSupport = SUPPORT_OPTIONS[randomIndex].key;
     setSelectedSupport(randomSupport);
 
     // Navigate to random support experience
@@ -74,8 +79,9 @@ export default function SupportSelectionPage() {
 
       {/* SUPPORT GRID */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 align-stretch">
-        {SUPPORT_TYPES.map((s) => {
+        {SUPPORT_OPTIONS.map((s) => {
           const selected = selectedSupport === s.key;
+          const IconComp = ICON_MAP[s.iconName] || Wind;
           return (
             <motion.button
               key={s.key}
@@ -96,7 +102,7 @@ export default function SupportSelectionPage() {
                 s.bg,
                 s.color
               )}>
-                <s.icon className="w-7 h-7" />
+                <IconComp className="w-7 h-7" />
               </div>
               <h3 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100 mb-1 text-center leading-tight">{s.label}</h3>
               <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium text-center leading-relaxed line-clamp-2">{s.description}</p>

@@ -1,59 +1,106 @@
 "use client";
 
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
-
+import { supabase } from "@/lib/still-zone-supabase";
+import { getSupportByKey } from "@/lib/still-zone-config";
 import ActionRevealCard from "@/components/ActionRevealCard";
 
-// Support type messages
-const SUPPORT_MESSAGES: Record<string, { message: string; action: string; actionType: string }> = {
-  'visual-breathing': {
-    message: 'Take a deep breath. Inhale calm, exhale tension.',
-    action: 'Practice deep breathing for 2 minutes',
-    actionType: 'breathing',
-  },
-  'audio-tool': {
-    message: 'Listen mindfully. Let the sounds guide you to peace.',
-    action: 'Listen to calming audio guidance',
-    actionType: 'audio',
-  },
-  'immediate-advice': {
-    message: 'You are stronger than you think. This moment will pass.',
-    action: 'Remember: One step at a time',
-    actionType: 'advice',
-  },
-  'havening': {
-    message: 'Gently touch your arms. Feel safe and grounded.',
-    action: 'Practice havening technique for comfort',
-    actionType: 'havening',
-  },
-  'nlp-micro': {
-    message: 'Reframe this thought: What would my best self say?',
-    action: 'Challenge and reframe your current thought',
-    actionType: 'nlp',
-  },
-  'resources': {
-    message: 'Knowledge is power. Explore resources that can help.',
-    action: 'Discover helpful articles and tools',
-    actionType: 'resources',
-  },
-};
+// Sanitize URL params — treat "null"/"undefined"/empty as missing
+function sanitizeParam(val: string | null): string | null {
+  if (!val || val === 'null' || val === 'undefined' || val.trim() === '') return null;
+  return val.trim();
+}
 
 export default function StillZoneExperiencePage() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
+  const hasSaved = useRef(false);
+  const sessionStartRef = useRef<number>(Date.now());
 
-
-
-  // Get parameters
+  // Get and sanitize parameters
   const supportType = params.supportType as string;
-  const mood = searchParams.get('mood');
-  const context = searchParams.get('context');
-  const time = searchParams.get('time');
+  const mood = sanitizeParam(searchParams.get('mood'));
+  const context = sanitizeParam(searchParams.get('context'));
+  const time = sanitizeParam(searchParams.get('time'));
 
-  const supportContent = SUPPORT_MESSAGES[supportType] || SUPPORT_MESSAGES['immediate-advice'];
+  // Get support content from config (dynamic, not hardcoded)
+  const supportConfig = getSupportByKey(supportType);
+  const supportContent = supportConfig
+    ? { message: supportConfig.message, action: supportConfig.action, actionType: supportConfig.actionType }
+    : { message: 'You are stronger than you think. This moment will pass.', action: 'Remember: One step at a time', actionType: 'advice' };
+
+  // Save mood entry to DB on page load (only if ALL 4 selections are valid)
+  useEffect(() => {
+    if (hasSaved.current) return;
+
+    const saveMoodEntry = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        // Only save if ALL params are valid — prevent saving "null" strings
+        if (!user || !mood || !context || !time || !supportType) {
+          console.warn('Skipping mood entry save — missing or invalid params:', { mood, context, time, supportType });
+          return;
+        }
+
+        hasSaved.current = true;
+
+        const res = await fetch('/still-zone/api/mood-entry', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            moodKey: mood,
+            contextKey: context,
+            timeKey: time,
+            supportKey: supportType,
+            audioKey: supportConfig?.audioKey || null,
+          }),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          console.error('Mood entry save failed:', errData);
+        }
+      } catch (err) {
+        console.error('Failed to save mood entry:', err);
+      }
+    };
+
+    saveMoodEntry();
+  }, [mood, context, time, supportType, supportConfig]);
+
+  // Track actual session duration — save on page leave
+  useEffect(() => {
+    const saveSessionDuration = async () => {
+      const durationSec = Math.round((Date.now() - sessionStartRef.current) / 1000);
+      if (durationSec < 2) return; // Ignore accidental quick visits
+
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        // Update today's entry with actual duration spent
+        await fetch('/still-zone/api/mood-entry', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: user.id,
+            sessionDurationSec: durationSec,
+          }),
+        });
+      } catch {
+        // Silent fail on unmount
+      }
+    };
+
+    // Save duration when user leaves
+    return () => {
+      saveSessionDuration();
+    };
+  }, []);
 
   const handleStartOver = () => {
     router.push('/still-zone/home');

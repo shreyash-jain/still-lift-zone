@@ -6,28 +6,11 @@ import { Palette, LayoutDashboard, User, LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/Header';
 import { AnimatedThemeToggler } from '@/registry/magicui/animated-theme-toggler';
+import { MOOD_OPTIONS, CONTEXT_OPTIONS, TIME_OPTIONS } from '@/lib/still-zone-config';
 
 // First screen after successful login for Still Zone
 // Mobile-first, calm UI matching Still Lift design patterns
 
-type MoodKey = 'overwhelmed' | 'sad' | 'anxious' | 'tired' | 'focus' | 'curious';
-
-const MOODS: { key: MoodKey; label: string; emoji: string }[] = [
-  { key: 'overwhelmed', label: 'Overwhelmed / Stressed', emoji: '😰' },
-  { key: 'sad', label: 'Sad / Low Mood', emoji: '😔' },
-  { key: 'anxious', label: 'Anxious / Restless', emoji: '😟' },
-  { key: 'tired', label: 'Tired / Burned Out', emoji: '😴' },
-  { key: 'focus', label: 'Seeking Focus', emoji: '🧐' },
-  { key: 'curious', label: 'Just Curious', emoji: '🤔' },
-];
-
-type ContextKey = 'still' | 'move' | 'focused';
-
-const CONTEXTS: { key: ContextKey; label: string; icon: string }[] = [
-  { key: 'still', label: 'Still and Safe', icon: '🪑' },
-  { key: 'move', label: 'On the Move, but Safe', icon: '🚶' },
-  { key: 'focused', label: 'On the Move and Focused', icon: '🎯' },
-];
 
 
 
@@ -37,9 +20,9 @@ export default function StillZoneHomePage() {
   // Navbar state
   const [menuOpen, setMenuOpen] = useState(false);
   // Selections
-  const [mood, setMood] = useState<MoodKey | null>(null);
-  const [context, setContext] = useState<ContextKey | null>(null);
-  const [time, setTime] = useState<number | null>(null);
+  const [mood, setMood] = useState<string | null>(null);
+  const [context, setContext] = useState<string | null>(null);
+  const [time, setTime] = useState<string | null>(null);
 
   // User preferences
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -58,7 +41,7 @@ export default function StillZoneHomePage() {
     return window.innerWidth <= 768;
   };
 
-  const handleMoodSelection = (selectedMood: MoodKey) => {
+  const handleMoodSelection = (selectedMood: string) => {
     // Toggle behavior
     if (mood === selectedMood) {
       setMood(null);
@@ -76,7 +59,7 @@ export default function StillZoneHomePage() {
     }
   };
 
-  const handleContextSelection = (selectedContext: ContextKey) => {
+  const handleContextSelection = (selectedContext: string) => {
     // Toggle behavior
     if (context === selectedContext) {
       setContext(null);
@@ -309,7 +292,7 @@ export default function StillZoneHomePage() {
                   <h2 className="font-inter font-semibold">How are you feeling today?</h2>
                 </div>
                 <div className="mood-buttons" ref={moodButtonsRef}>
-                  {MOODS.map((m) => {
+                  {MOOD_OPTIONS.map((m) => {
                     const selected = mood === m.key;
                     return (
                       <button
@@ -337,7 +320,7 @@ export default function StillZoneHomePage() {
                     <h2 className="font-inter font-semibold">Where are you right now?</h2>
                   </div>
                   <div className="context-buttons" ref={contextButtonsRef}>
-                    {CONTEXTS.map((c) => {
+                    {CONTEXT_OPTIONS.map((c) => {
                       const selected = context === c.key;
                       return (
                         <button
@@ -366,14 +349,13 @@ export default function StillZoneHomePage() {
                     id="time-select"
                     className="time-select glass-card"
                     value={time ?? ''}
-                    onChange={(e) => setTime(e.target.value ? parseInt(e.target.value, 10) : null)}
+                    onChange={(e) => setTime(e.target.value || null)}
                     aria-label="Select session duration"
                   >
                     <option value="">Select duration</option>
-                    <option value={1}>1 minute</option>
-                    <option value={2}>2 minutes</option>
-                    <option value={5}>5 minutes</option>
-                    <option value={10}>10 minutes</option>
+                    {TIME_OPTIONS.map((t) => (
+                      <option key={t.key} value={t.key}>{t.label}</option>
+                    ))}
                   </select>
                 </div>
               </div>
