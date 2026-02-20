@@ -1,16 +1,22 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
-    Wind, Music, Brain, Sparkles, Trophy, User
+    Wind, Music, Brain, Sparkles, Trophy, User, BookOpen
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { supabase } from '@/lib/still-zone-supabase';
 import { StatCard, ToolCard, BadgeCard, MoodTrackerGrid } from '@/components/still-zone';
+import JournalDialog from '@/components/JournalDialog';
+import { useJournalNotes } from '@/hooks/useJournalNotes';
+import { CreateJournalNoteData } from '@/types/journal';
 
 export default function DashboardPage() {
     const [userName, setUserName] = useState('');
+    const [isJournalDialogOpen, setIsJournalDialogOpen] = useState(false);
+    const { createNote } = useJournalNotes();
 
     useEffect(() => {
         const fetchUser = async () => {
@@ -23,9 +29,13 @@ export default function DashboardPage() {
         fetchUser();
     }, []);
 
+    const handleCreateJournalNote = async (data: CreateJournalNoteData) => {
+        await createNote(data);
+    };
+
     return (
-        /* DASHBOARD CONTENT */
-        <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-24 pb-12 space-y-8">
+        <>
+            <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-24 pb-12 space-y-8">
 
 
             {/* Welcome Section */}
@@ -54,7 +64,7 @@ export default function DashboardPage() {
                     <CardContent>
                         <MoodTrackerGrid />
                         <div className="flex justify-end pt-2">
-                            <Button className="bg-sky-600 hover:bg-sky-700 text-white shadow-sm">View Trends</Button>
+                            <Button className="bg-teal-600 hover:bg-teal-700 text-white shadow-sm">View Trends</Button>
                         </div>
                     </CardContent>
                 </Card>
@@ -137,7 +147,7 @@ export default function DashboardPage() {
                                 </h3>
                             </div>
                             <div className="z-10">
-                                <Button className="bg-sky-600 hover:bg-sky-700 text-white shadow-sm px-8">Start Now</Button>
+                                <Button className="bg-teal-600 hover:bg-teal-700 text-white shadow-sm px-8">Start Now</Button>
                             </div>
                             {/* Decorative elements */}
                             <div className="absolute left-0 top-0 w-32 h-32 bg-sky-100/50 rounded-full -translate-x-1/2 -translate-y-1/2 blur-2xl dark:opacity-10" />
@@ -178,9 +188,23 @@ export default function DashboardPage() {
                             {/* Weekly Reflection */}
                             <div className="flex flex-col gap-3 p-4 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                                 <h4 className="font-bold text-sm text-slate-700 dark:text-slate-300 text-center">Weekly Reflection</h4>
-                                <Button size="sm" className="w-full text-xs font-medium bg-sky-600 hover:bg-sky-700 text-white">
+                                <Button 
+                                    size="sm" 
+                                    className="w-full text-xs font-medium bg-teal-600 hover:bg-teal-700 text-white"
+                                    onClick={() => setIsJournalDialogOpen(true)}
+                                >
                                     Add Journal Note
                                 </Button>
+                                <Link href="/still-zone/journal">
+                                    <Button 
+                                        variant="outline" 
+                                        size="sm" 
+                                        className="w-full text-xs font-medium border-teal-200 dark:border-teal-800 text-teal-700 dark:text-teal-300 hover:bg-teal-50 dark:hover:bg-teal-900/30 gap-1"
+                                    >
+                                        <BookOpen className="w-3 h-3" />
+                                        View All Notes
+                                    </Button>
+                                </Link>
                             </div>
                         </div>
                     </CardContent>
@@ -189,5 +213,13 @@ export default function DashboardPage() {
             </div>
         </main>
 
+        {/* Journal Dialog */}
+        <JournalDialog
+            isOpen={isJournalDialogOpen}
+            onOpenChange={setIsJournalDialogOpen}
+            onSave={handleCreateJournalNote}
+            mode="create"
+        />
+        </>
     );
 }
