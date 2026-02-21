@@ -11,5 +11,7 @@ export { ToolCard } from './ToolCard';
 export { BadgeCard } from './BadgeCard';
 export { FormFieldWithIcon } from './FormFieldWithIcon';
 export { MoodTrackerGrid } from './MoodTrackerGrid';
+export { MoodTrackingGraph } from './MoodTrackingGraph';
 export { PageHeader } from './PageHeader';
 export { SectionHeader } from './SectionHeader';
+
