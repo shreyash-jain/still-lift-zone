@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 export interface PlayTextAudioOptions {
   title?: string;
   rate?: number;

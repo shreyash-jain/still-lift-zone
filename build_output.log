@@ -1,0 +1,203 @@
+
+> stilllift_new@0.1.0 build /Users/neerajhariyale/development/still-lift-zone/still-lift-zone
+> next build
+
+ ⚠ Warning: Found multiple lockfiles. Selecting /Users/neerajhariyale/package-lock.json.
+   Consider removing the lockfiles at:
+   * /Users/neerajhariyale/development/still-lift-zone/still-lift-zone/pnpm-lock.yaml
+
+   ▲ Next.js 15.4.5
+   - Environments: .env.local
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully in 8.0s
+   Linting and checking validity of types ...
+
+Failed to compile.
+
+./src/app/api/test-db/route.ts
+1:10  Warning: 'NextRequest' is defined but never used.  @typescript-eslint/no-unused-vars
+19:17  Warning: 'data' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/cards/page.tsx
+3:31  Warning: 'useMemo' is defined but never used.  @typescript-eslint/no-unused-vars
+5:8  Warning: 'Link' is defined but never used.  @typescript-eslint/no-unused-vars
+23:10  Warning: 'selectedMessage' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+23:27  Warning: 'setSelectedMessage' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+34:35  Warning: 'isLoading' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+34:46  Warning: 'error' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/fortune-cookie/page.tsx
+19:10  Warning: 'currentMood' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+20:10  Warning: 'currentContext' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/message-card-focussed/page.tsx
+22:10  Warning: 'showCard' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+22:20  Warning: 'setShowCard' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+24:10  Warning: 'currentMood' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/message-card-moving/page.tsx
+7:10  Warning: 'getRandomMessage' is defined but never used.  @typescript-eslint/no-unused-vars
+13:11  Warning: 'MessageData' is defined but never used.  @typescript-eslint/no-unused-vars
+35:10  Warning: 'actionIndex' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+36:10  Warning: 'showCard' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+36:20  Warning: 'setShowCard' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+143:6  Warning: React Hook useEffect has a missing dependency: 'selectRandomAction'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+198:6  Warning: React Hook useEffect has a missing dependency: 'playCurrentMessage'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/option3/page.tsx
+56:10  Warning: 'animationComplete' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/page.tsx
+382:6  Warning: React Hook useMemo has a missing dependency: 'getMicroHabit'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+504:6  Warning: React Hook useCallback has missing dependencies: 'stopHomepageAudio' and 'stopTaskAudio'. Either include them or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/app/scratch-card/page.tsx
+20:10  Warning: 'currentMood' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+21:10  Warning: 'currentContext' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/still-lift-content-manager/page.tsx
+3:20  Warning: 'useEffect' is defined but never used.  @typescript-eslint/no-unused-vars
+6:22  Warning: 'useAllMessages' is defined but never used.  @typescript-eslint/no-unused-vars
+22:10  Warning: 'isAdding' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+22:20  Warning: 'setIsAdding' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/still-zone/(protected)/experience/[supportType]/page.tsx
+3:10  Warning: 'useState' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/still-zone/(protected)/my-plan/page.tsx
+4:10  Warning: 'CreditCard' is defined but never used.  @typescript-eslint/no-unused-vars
+4:22  Warning: 'AlertCircle' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/still-zone/(protected)/plans/page.tsx
+52:11  Warning: 'router' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/still-zone/(protected)/profile/page.tsx
+4:8  Warning: 'Image' is defined but never used.  @typescript-eslint/no-unused-vars
+5:18  Warning: 'Save' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/app/still-zone/login/page.tsx
+104:15  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/still-zone/signup/page.tsx
+128:29  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/app/super-admin-stillzone/api/members/route.ts
+135:49  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/super-admin-stillzone/api/mood-analytics/route.ts
+4:27  Warning: 'request' is defined but never used.  @typescript-eslint/no-unused-vars
+37:42  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+40:41  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+97:27  Warning: Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-explicit-any').
+
+./src/app/super-admin-stillzone/members/page.tsx
+69:10  Warning: 'getMoodEmoji' is defined but never used.  @typescript-eslint/no-unused-vars
+133:8  Warning: React Hook useEffect has a missing dependency: 'fetchMembers'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+470:61  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+470:66  Warning: Unused eslint-disable directive (no problems were reported from '@next/next/no-img-element').
+566:45  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+566:50  Warning: Unused eslint-disable directive (no problems were reported from '@next/next/no-img-element').
+
+./src/app/super-admin-stillzone/page.tsx
+14:5  Warning: 'UserCheck' is defined but never used.  @typescript-eslint/no-unused-vars
+15:5  Warning: 'ShieldOff' is defined but never used.  @typescript-eslint/no-unused-vars
+94:8  Warning: React Hook useEffect has a missing dependency: 'fetchDashboardData'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+337:105  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+357:10  Warning: 'MoodAnalytics' is defined but never used.  @typescript-eslint/no-unused-vars
+446:77  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+479:69  Error: Unexpected any. Specify a different type.  @typescript-eslint/no-explicit-any
+
+./src/app/tarot-cards/page.tsx
+20:10  Warning: 'currentMood' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+21:10  Warning: 'currentContext' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/3DAutoFlip.tsx
+34:3  Warning: 'actionType' is defined but never used.  @typescript-eslint/no-unused-vars
+35:3  Warning: 'onStartOver' is defined but never used.  @typescript-eslint/no-unused-vars
+36:3  Warning: 'onTryAnother' is defined but never used.  @typescript-eslint/no-unused-vars
+49:9  Warning: The 'messages' array makes the dependencies of useEffect Hook (at line 160) change on every render. To fix this, wrap the initialization of 'messages' in its own useMemo() Hook.  react-hooks/exhaustive-deps
+
+./src/components/3DBalloon.tsx
+5:7  Warning: 'BALLOON_ACTION_TAG' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+6:7  Warning: 'BALLOON_MESSAGE_BODY' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+35:10  Warning: 'showMessage' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+98:6  Warning: React Hook useCallback has an unnecessary dependency: 'onReveal'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+100:9  Warning: 'handleStartOver' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+107:9  Warning: 'handleGiveAnother' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/3DBandage.tsx
+68:9  Warning: 'getAnimationDuration' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+119:9  Warning: 'handleReplay' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+132:9  Warning: 'handleGiveAnother' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+137:9  Warning: 'getCurrentMessage' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/3DEnvelope.tsx
+44:3  Warning: 'accentColor' is defined but never used.  @typescript-eslint/no-unused-vars
+67:9  Warning: 'resolvedTitle' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+110:6  Warning: React Hook useCallback has an unnecessary dependency: 'onReveal'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+112:9  Warning: 'handleReplay' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+119:9  Warning: 'handleStartOver' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+125:9  Warning: 'handleGiveAnother' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/3DGlowPatch.tsx
+3:20  Warning: 'useEffect' is defined but never used.  @typescript-eslint/no-unused-vars
+35:9  Warning: 'getAnimationDuration' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/3DLightSwitch.tsx
+42:6  Warning: React Hook useEffect has a missing dependency: 'getAnimationDuration'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/3DPlayingCard.tsx
+45:10  Warning: 'isFlipping' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+129:9  Warning: The 'messages' array makes the dependencies of useEffect Hook (at line 276) change on every render. To fix this, wrap the initialization of 'messages' in its own useMemo() Hook.  react-hooks/exhaustive-deps
+
+./src/components/3DRevealElement.tsx
+59:10  Warning: 'isAnimating' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/3DRibbonSlide.tsx
+3:20  Warning: 'useEffect' is defined but never used.  @typescript-eslint/no-unused-vars
+35:9  Warning: 'getAnimationDuration' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/3DStamp.tsx
+42:6  Warning: React Hook useEffect has a missing dependency: 'getAnimationDuration'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/3DSticker.tsx
+42:6  Warning: React Hook useEffect has a missing dependency: 'getAnimationDuration'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/3DTreasureChest.tsx
+52:10  Warning: 'messageEmerging' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+56:10  Warning: 'messageStatic' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+69:9  Warning: 'getDisplayActionType' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+92:6  Warning: React Hook useCallback has an unnecessary dependency: 'onPlayNarration'. Either exclude it or remove the dependency array.  react-hooks/exhaustive-deps
+178:6  Warning: React Hook useCallback has a missing dependency: 'getAnimationDuration'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/3DWarmCup.tsx
+42:6  Warning: React Hook useEffect has a missing dependency: 'getAnimationDuration'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/3DWindow.tsx
+42:6  Warning: React Hook useEffect has a missing dependency: 'getAnimationDuration'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/AuthWrapper.tsx
+33:84  Warning: 'session' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/StillLiftMobileCard.tsx
+35:11  Warning: Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+./src/components/_shelved_card_flip_V1/FlipCard.tsx
+15:3  Warning: 'title' is defined but never used.  @typescript-eslint/no-unused-vars
+32:6  Warning: React Hook useEffect has a missing dependency: 'flipDelay'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/magic-bento.tsx
+30:5  Warning: 'href' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/still-zone/MoodTrackingGraph.tsx
+243:11  Warning: 'formatStreakDates' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./src/components/super-admin/AdminMoodCalendar.tsx
+107:8  Warning: React Hook useMemo has a missing dependency: 'joinDateObj'. Either include it or remove the dependency array.  react-hooks/exhaustive-deps
+
+./src/components/super-admin/Header.tsx
+15:11  Warning: 'router' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/app/api-reference/config/eslint#disabling-rules
+ ELIFECYCLE  Command failed with exit code 1.
