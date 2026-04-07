@@ -69,7 +69,7 @@ export default function SuperAdminLogin() {
                             className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg px-4 py-3 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder="admin@stillzone.com"
+                            placeholder="Enter your email"
                         />
                     </div>
 
