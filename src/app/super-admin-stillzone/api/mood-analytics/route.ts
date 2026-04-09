@@ -1,4 +1,3 @@
-export const runtime = 'experimental-edge';
 
 import { NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/super-admin/supabase';
