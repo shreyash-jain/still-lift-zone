@@ -1,5 +1,6 @@
 // Hook for managing Still Zone content
 // Separate from Still Lift content hooks
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
 import { useState, useEffect, useCallback } from 'react';
 import {

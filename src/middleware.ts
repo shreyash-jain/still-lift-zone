@@ -5,6 +5,33 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // SuperAdmin Portal Route Protection
+  if (pathname.startsWith('/super-admin-stillzone')) {
+    const isLoginPage = pathname === '/super-admin-stillzone/login';
+    const isAuthApi = pathname.startsWith('/super-admin-stillzone/api/auth');
+
+    const adminSession = request.cookies.get('super_admin_session');
+
+    if (isLoginPage) {
+      if (adminSession) {
+        // If already logged in, no need to see the login page
+        return NextResponse.redirect(new URL('/super-admin-stillzone', request.url));
+      }
+      return NextResponse.next();
+    }
+
+    if (isAuthApi) {
+      return NextResponse.next();
+    }
+
+    if (!adminSession) {
+      const loginUrl = new URL('/super-admin-stillzone/login', request.url);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    return NextResponse.next();
+  }
+
   // Only apply middleware to Still Zone routes
   if (!pathname.startsWith('/still-zone')) {
     return NextResponse.next();
@@ -30,6 +57,7 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/still-zone/:path*',
+    '/super-admin-stillzone/:path*'
   ],
 };
 
