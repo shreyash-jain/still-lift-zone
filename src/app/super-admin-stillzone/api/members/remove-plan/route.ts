@@ -36,7 +36,7 @@ export async function POST(request: Request) {
             .from('user_plans')
             .select('id, user_id, plan_id, plan_key, status, razorpay_subscription_id, razorpay_order_id')
             .eq('user_id', userId)
-            .in('status', ['active', 'trialing']);
+            .in('status', ['active', 'trial', 'pending']);
 
         if (planFetchError) throw planFetchError;
 

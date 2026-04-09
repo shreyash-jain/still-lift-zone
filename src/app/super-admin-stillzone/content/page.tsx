@@ -21,7 +21,11 @@ interface ContentEntry {
     message: string;
     display_time: number;
     audio_url: string | null;
+    background_audio_url: string | null;
+    completion_audio_url: string | null;
+    beep_audio_url: string | null;
     is_combo: boolean;
+    segments: { duration: number; message: string; audio_url?: string }[] | null;
     combo_second_message: string | null;
     combo_first_audio_url: string | null;
     combo_second_audio_url: string | null;
@@ -54,7 +58,11 @@ const emptyForm = {
     message: '',
     display_time: '60',
     audio_url: '',
+    background_audio_url: '',
+    completion_audio_url: '',
+    beep_audio_url: '',
     is_combo: false,
+    segments: '[]',
     combo_second_message: '',
     combo_first_audio_url: '',
     combo_second_audio_url: '',
@@ -301,6 +309,10 @@ export default function ContentManagementPage() {
             message: entry.message,
             display_time: String(entry.display_time),
             audio_url: entry.audio_url || '',
+            background_audio_url: entry.background_audio_url || '',
+            completion_audio_url: entry.completion_audio_url || '',
+            beep_audio_url: entry.beep_audio_url || '',
+            segments: JSON.stringify(entry.segments || []),
             is_combo: entry.is_combo,
             combo_second_message: entry.combo_second_message || '',
             combo_first_audio_url: entry.combo_first_audio_url || '',
@@ -342,6 +354,10 @@ export default function ContentManagementPage() {
                 message: form.message.trim(),
                 display_time: Number(form.display_time) || DISPLAY_TIMES[form.time_key] || 60,
                 audio_url: form.audio_url || null,
+                background_audio_url: form.background_audio_url || null,
+                completion_audio_url: form.completion_audio_url || null,
+                beep_audio_url: form.beep_audio_url || null,
+                segments: form.is_combo ? JSON.parse(form.segments || '[]') : null,
                 is_combo: form.is_combo,
                 combo_second_message: form.is_combo ? form.combo_second_message.trim() || null : null,
                 combo_first_audio_url: form.is_combo ? form.combo_first_audio_url || null : null,
@@ -514,26 +530,87 @@ export default function ContentManagementPage() {
                         </div>
 
                         {/* Audio */}
-                        <AudioUploadField label="Audio File" value={form.audio_url} onChange={v => setForm(f => ({ ...f, audio_url: v }))} pathPrefix={audioPathPrefix} playingUrl={playingUrl} onPlay={togglePreview} />
+                        <AudioUploadField label="Main Audio (voice guidance)" value={form.audio_url} onChange={v => setForm(f => ({ ...f, audio_url: v }))} pathPrefix={audioPathPrefix} playingUrl={playingUrl} onPlay={togglePreview} />
+                        <AudioUploadField label="Background Audio (loops after main audio ends)" value={form.background_audio_url} onChange={v => setForm(f => ({ ...f, background_audio_url: v }))} pathPrefix={`${audioPathPrefix}/bg`} playingUrl={playingUrl} onPlay={togglePreview} />
+                        <AudioUploadField label="Completion Sound (plays when timer finishes, optional — uses global default if empty)" value={form.completion_audio_url} onChange={v => setForm(f => ({ ...f, completion_audio_url: v }))} pathPrefix={`${audioPathPrefix}/completion`} playingUrl={playingUrl} onPlay={togglePreview} />
 
-                        {/* Combo section (5min) */}
-                        {form.is_combo && (
-                            <div className="space-y-4 p-4 rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50/50 dark:bg-amber-900/10">
-                                <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">5-Minute Combo (3min + 2min)</p>
-                                <div className="space-y-1">
-                                    <label className="text-xs font-medium text-slate-500">Second Part Message (2min)</label>
-                                    <textarea
-                                        value={form.combo_second_message}
-                                        onChange={e => setForm(f => ({ ...f, combo_second_message: e.target.value }))}
-                                        rows={3}
-                                        placeholder="Message for the 2-minute second part..."
-                                        className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
-                                    />
+                        {/* Multi-segment builder */}
+                        {form.is_combo && (() => {
+                            const segs: { duration: number; message: string; audio_url: string }[] = (() => {
+                                try { return JSON.parse(form.segments || '[]'); } catch { return []; }
+                            })();
+
+                            const updateSegs = (newSegs: typeof segs) => setForm(f => ({ ...f, segments: JSON.stringify(newSegs) }));
+                            const addSegment = () => updateSegs([...segs, { duration: 60, message: '', audio_url: '' }]);
+                            const removeSegment = (i: number) => updateSegs(segs.filter((_, idx) => idx !== i));
+                            const updateSegment = (i: number, field: string, val: string | number) => {
+                                const copy = [...segs];
+                                copy[i] = { ...copy[i], [field]: val };
+                                updateSegs(copy);
+                                // Auto-calculate total display_time
+                                const total = copy.reduce((sum, s) => sum + (Number(s.duration) || 0), 0);
+                                setForm(f => ({ ...f, display_time: String(total) }));
+                            };
+
+                            return (
+                                <div className="space-y-4 p-4 rounded-xl border border-amber-200 dark:border-amber-800/50 bg-amber-50/50 dark:bg-amber-900/10">
+                                    <div className="flex items-center justify-between">
+                                        <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                                            Session Segments ({segs.length})
+                                        </p>
+                                        <button type="button" onClick={addSegment} className="text-xs font-medium text-teal-600 hover:text-teal-700">
+                                            + Add Segment
+                                        </button>
+                                    </div>
+
+                                    {segs.map((seg, i) => (
+                                        <div key={i} className="space-y-2 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Segment {i + 1}</span>
+                                                {segs.length > 1 && (
+                                                    <button type="button" onClick={() => removeSegment(i)} className="text-xs text-red-500 hover:text-red-700">Remove</button>
+                                                )}
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <InputField label="Duration (seconds)" value={String(seg.duration)} onChange={v => updateSegment(i, 'duration', Number(v) || 0)} type="number" />
+                                                <div className="flex items-end text-xs text-slate-400 pb-2">
+                                                    = {Math.floor((seg.duration || 0) / 60)}m {(seg.duration || 0) % 60}s
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-medium text-slate-500">Message</label>
+                                                <textarea
+                                                    value={seg.message}
+                                                    onChange={e => updateSegment(i, 'message', e.target.value)}
+                                                    rows={2}
+                                                    placeholder={`Text shown during segment ${i + 1}...`}
+                                                    className="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 resize-none"
+                                                />
+                                            </div>
+                                            <AudioUploadField
+                                                label={`Segment ${i + 1} Audio`}
+                                                value={seg.audio_url || ''}
+                                                onChange={v => updateSegment(i, 'audio_url', v)}
+                                                pathPrefix={`${audioPathPrefix}/seg-${i + 1}`}
+                                                playingUrl={playingUrl}
+                                                onPlay={togglePreview}
+                                            />
+                                        </div>
+                                    ))}
+
+                                    {segs.length === 0 && (
+                                        <p className="text-xs text-slate-400 text-center py-4">No segments yet. Click &quot;+ Add Segment&quot; to build your multi-part session.</p>
+                                    )}
+
+                                    {/* Beep/transition sound */}
+                                    <AudioUploadField label="Transition Sound (beep between segments)" value={form.beep_audio_url} onChange={v => setForm(f => ({ ...f, beep_audio_url: v }))} pathPrefix={`${audioPathPrefix}/beep`} playingUrl={playingUrl} onPlay={togglePreview} />
+
+                                    <p className="text-[10px] text-amber-600 dark:text-amber-400">
+                                        Total duration: {segs.reduce((s, seg) => s + (Number(seg.duration) || 0), 0)}s = {Math.floor(segs.reduce((s, seg) => s + (Number(seg.duration) || 0), 0) / 60)}m {segs.reduce((s, seg) => s + (Number(seg.duration) || 0), 0) % 60}s
+                                    </p>
                                 </div>
-                                <AudioUploadField label="First Part Audio (3min)" value={form.combo_first_audio_url} onChange={v => setForm(f => ({ ...f, combo_first_audio_url: v }))} pathPrefix={`${audioPathPrefix}/combo-first`} playingUrl={playingUrl} onPlay={togglePreview} />
-                                <AudioUploadField label="Second Part Audio (2min)" value={form.combo_second_audio_url} onChange={v => setForm(f => ({ ...f, combo_second_audio_url: v }))} pathPrefix={`${audioPathPrefix}/combo-second`} playingUrl={playingUrl} onPlay={togglePreview} />
-                            </div>
-                        )}
+                            );
+                        })()}
 
                         {/* Toggle */}
                         <button type="button" onClick={() => setForm(f => ({ ...f, is_active: !f.is_active }))} className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">

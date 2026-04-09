@@ -73,16 +73,18 @@ export async function GET(request: NextRequest) {
             throw new Error('Failed to fetch plan');
         }
 
-        // Get user's recent invoices
-        const { data: invoices, error: invoiceError } = await supabase
-            .from('user_invoices')
-            .select('*')
-            .eq('user_id', userId)
-            .order('created_at', { ascending: false })
-            .limit(5);
-
-        if (invoiceError) {
-            console.error('Error fetching invoices:', invoiceError);
+        // Get user's recent invoices (table may not exist)
+        let invoices: Record<string, unknown>[] | null = null;
+        try {
+            const { data, error: invoiceError } = await supabase
+                .from('user_invoices')
+                .select('*')
+                .eq('user_id', userId)
+                .order('created_at', { ascending: false })
+                .limit(5);
+            if (!invoiceError) invoices = data;
+        } catch {
+            // user_invoices table may not exist — that's OK
         }
 
         // If no active plan
@@ -115,8 +117,8 @@ export async function GET(request: NextRequest) {
         let daysRemaining: number | null = null;
         let isExpired = false;
 
-        if (userPlan.subscription_end_date) {
-            const endDate = new Date(userPlan.subscription_end_date);
+        if (userPlan.current_period_end) {
+            const endDate = new Date(userPlan.current_period_end);
             const now = new Date();
             daysRemaining = Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
             isExpired = daysRemaining < 0;
@@ -150,7 +152,7 @@ export async function GET(request: NextRequest) {
             // Subscription Dates
             subscription: {
                 start_date: userPlan.subscription_start_date,
-                end_date: userPlan.subscription_end_date,
+                end_date: userPlan.current_period_end,
                 days_remaining: isExpired ? 0 : daysRemaining,
                 is_expired: isExpired,
             },
@@ -168,12 +170,12 @@ export async function GET(request: NextRequest) {
             },
 
             // Recent Invoices
-            invoices: (invoices || []).map(inv => ({
+            invoices: (invoices || []).map((inv: Record<string, unknown>) => ({
                 id: inv.id,
                 invoice_number: inv.invoice_number,
                 amount: inv.total_amount,
                 amount_formatted: inv.total_amount
-                    ? formatAmount(inv.total_amount, inv.currency || 'INR')
+                    ? formatAmount(inv.total_amount as number, (inv.currency as string) || 'INR')
                     : null,
                 currency: inv.currency,
                 status: inv.status,

@@ -42,10 +42,13 @@ export const supabase: SupabaseClient = isSupabaseConfigured
 export interface StillZoneUser {
   id: string;
   email: string;
+  full_name: string | null;
+  mobile_number: string | null;
+  selected_plan_id: string | null;
   trial_start_date: string | null;
   trial_end_date: string | null;
   trial_active: boolean;
-  subscription_status: 'none' | 'active' | 'expired';
+  subscription_status: 'none' | 'pending' | 'active' | 'expired';
   created_at: string;
   updated_at: string;
 }

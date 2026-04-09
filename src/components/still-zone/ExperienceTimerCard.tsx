@@ -1,37 +1,38 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Play, Pause, RotateCcw, Shuffle, CheckCircle2 } from 'lucide-react';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface ExperienceTimerCardProps {
-  /** Primary message to display */
+interface Segment {
+  duration: number;
   message: string;
-  /** Action/heading text */
+  audioUrl?: string;
+}
+
+interface ExperienceTimerCardProps {
+  message: string;
   action: string;
-  /** Badge type: breathing, audio, advice, havening, nlp, resources */
   actionType: string;
-  /** Total duration in seconds */
   totalDuration: number;
-  /** Whether this is a 5min combo (3min + 2min) */
   isCombo?: boolean;
-  /** Message for the second part of a 5min combo */
-  comboSecondMessage?: string;
-  /** Audio file to play during the session (path relative to /public) */
+  /** Dynamic segments for multi-part sessions (admin-defined) */
+  segments?: Segment[];
   audioSrc?: string;
-  /** Audio for the first part of a 5min combo */
+  backgroundAudioSrc?: string;
+  completionAudioSrc?: string;
+  /** Beep/transition sound between segments (admin-configurable) */
+  beepAudioSrc?: string;
+  /** Legacy combo fields */
+  comboSecondMessage?: string;
   comboFirstAudioSrc?: string;
-  /** Audio for the second part of a 5min combo */
   comboSecondAudioSrc?: string;
-  /** Called when user clicks "Try Another" */
   onTryAnother?: () => void;
-  /** Called when user clicks "Start Over" */
   onStartOver?: () => void;
-  /** Called when user marks session as complete */
   onComplete?: () => void;
 }
 
-type SessionPhase = 'ready' | 'playing' | 'transitioning' | 'completed';
+type SessionPhase = 'ready' | 'playing' | 'completed';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const formatTime = (seconds: number): string => {
@@ -70,8 +71,12 @@ export default function ExperienceTimerCard({
   actionType,
   totalDuration,
   isCombo = false,
+  segments,
   comboSecondMessage,
   audioSrc,
+  backgroundAudioSrc,
+  completionAudioSrc,
+  beepAudioSrc,
   comboFirstAudioSrc,
   comboSecondAudioSrc,
   onTryAnother,
@@ -82,14 +87,36 @@ export default function ExperienceTimerCard({
   const [elapsed, setElapsed] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   const [currentMessage, setCurrentMessage] = useState(message);
-  const [comboPhase, setComboPhase] = useState<1 | 2>(1); // for 5min combos
+  const [currentSegmentIdx, setCurrentSegmentIdx] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const bellAudioRef = useRef<HTMLAudioElement | null>(null);
   const beepAudioRef = useRef<HTMLAudioElement | null>(null);
+  const bgAudioRef = useRef<HTMLAudioElement | null>(null);
   const sessionAudioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Combo split: 3min = 180s for part 1
-  const comboSplitAt = isCombo ? 180 : 0;
+  // ── Build segment boundaries from dynamic segments or legacy combo ──
+  const resolvedSegments: Segment[] = useMemo(() => {
+    if (segments && segments.length > 0) return segments;
+    // Legacy: convert old combo to segments
+    if (isCombo && comboSecondMessage) {
+      const firstDuration = 180; // legacy default
+      return [
+        { duration: firstDuration, message, audioUrl: comboFirstAudioSrc },
+        { duration: totalDuration - firstDuration, message: comboSecondMessage, audioUrl: comboSecondAudioSrc },
+      ];
+    }
+    // Single segment
+    return [{ duration: totalDuration, message, audioUrl: audioSrc }];
+  }, [segments, isCombo, comboSecondMessage, message, comboFirstAudioSrc, comboSecondAudioSrc, totalDuration, audioSrc]);
+
+  const isMultiSegment = resolvedSegments.length > 1;
+
+  // Cumulative end times: [120, 300] for segments of [120s, 180s]
+  const segmentEndTimes = useMemo(() => {
+    let sum = 0;
+    return resolvedSegments.map(s => { sum += s.duration; return sum; });
+  }, [resolvedSegments]);
+
   const remaining = Math.max(0, totalDuration - elapsed);
   const progress = totalDuration > 0 ? elapsed / totalDuration : 0;
   const strokeDashoffset = CIRCUMFERENCE * (1 - progress);
@@ -127,18 +154,36 @@ export default function ExperienceTimerCard({
     }
   }, []);
 
+  // ── Background audio helpers ──────────────────────────────────────────────
+  const startBgAudio = useCallback(() => {
+    if (!backgroundAudioSrc || !bgAudioRef.current) return;
+    bgAudioRef.current.src = backgroundAudioSrc;
+    bgAudioRef.current.loop = true;
+    bgAudioRef.current.volume = 0.4; // softer than main audio
+    bgAudioRef.current.currentTime = 0;
+    bgAudioRef.current.play().catch(() => {});
+  }, [backgroundAudioSrc]);
+
+  const stopBgAudio = useCallback(() => {
+    if (bgAudioRef.current) {
+      bgAudioRef.current.pause();
+      bgAudioRef.current.currentTime = 0;
+    }
+  }, []);
+
   // ── Start timer ───────────────────────────────────────────────────────────
   const startTimer = useCallback(() => {
     setPhase('playing');
     setElapsed(0);
     setIsPaused(false);
-    setComboPhase(1);
-    setCurrentMessage(message);
-    // Play audio: for combos, play the first part audio; otherwise play the main audio
-    const src = isCombo ? comboFirstAudioSrc : audioSrc;
-    // Small delay to let React render first
-    setTimeout(() => playSessionAudio(src), 100);
-  }, [message, audioSrc, isCombo, comboFirstAudioSrc, playSessionAudio]);
+    setCurrentSegmentIdx(0);
+    setCurrentMessage(resolvedSegments[0]?.message || message);
+    stopBgAudio();
+    // Play first segment's audio
+    const firstAudio = resolvedSegments[0]?.audioUrl;
+    setTimeout(() => playSessionAudio(firstAudio), 100);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [message]);
 
   // ── Auto-start on mount ───────────────────────────────────────────────────
   const hasStartedRef = useRef(false);
@@ -147,9 +192,25 @@ export default function ExperienceTimerCard({
       hasStartedRef.current = true;
       startTimer();
     }
-    return () => stopSessionAudio();
+    return () => { stopSessionAudio(); stopBgAudio(); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // ── Start background audio when main audio ends ───────────────────────────
+  useEffect(() => {
+    const audio = sessionAudioRef.current;
+    if (!audio || !backgroundAudioSrc) return;
+
+    const handleMainEnded = () => {
+      // Main audio finished — start looping background audio
+      if (phase === 'playing' && !isPaused) {
+        startBgAudio();
+      }
+    };
+
+    audio.addEventListener('ended', handleMainEnded);
+    return () => audio.removeEventListener('ended', handleMainEnded);
+  }, [backgroundAudioSrc, phase, isPaused, startBgAudio]);
 
   // ── Play audio when audioSrc arrives (async content fetch) ────────────────
   useEffect(() => {
@@ -171,52 +232,66 @@ export default function ExperienceTimerCard({
     };
   }, [phase, isPaused, tick]);
 
-  // ── Handle combo transition at 3min mark ──────────────────────────────────
+  // ── Handle segment transitions (seamless — no pause, no "transitioning" state) ──
   useEffect(() => {
-    if (isCombo && comboPhase === 1 && elapsed >= comboSplitAt && phase === 'playing') {
-      // Transition: pause briefly, play beep, switch message
-      setPhase('transitioning');
-      setComboPhase(2);
+    if (!isMultiSegment || phase !== 'playing') return;
 
-      // Play beep
-      if (beepAudioRef.current) {
-        beepAudioRef.current.currentTime = 0;
-        beepAudioRef.current.play().catch(() => {});
-      }
+    const nextIdx = currentSegmentIdx + 1;
+    if (nextIdx >= resolvedSegments.length) return;
 
-      // After a short pause, resume with second message
-      const timeout = setTimeout(() => {
-        if (comboSecondMessage) setCurrentMessage(comboSecondMessage);
-        setPhase('playing');
-      }, 1500);
+    const transitionAt = segmentEndTimes[currentSegmentIdx];
+    if (elapsed < transitionAt) return;
 
-      return () => clearTimeout(timeout);
+    // Seamless transition: swap message + audio, play beep overlay
+    stopSessionAudio();
+    stopBgAudio();
+
+    // Play beep as overlay (doesn't pause anything)
+    if (beepAudioRef.current) {
+      if (beepAudioSrc) beepAudioRef.current.src = beepAudioSrc;
+      beepAudioRef.current.currentTime = 0;
+      beepAudioRef.current.play().catch(() => {});
     }
-  }, [elapsed, isCombo, comboPhase, comboSplitAt, comboSecondMessage, phase]);
+
+    // Immediately switch to next segment
+    setCurrentSegmentIdx(nextIdx);
+    setCurrentMessage(resolvedSegments[nextIdx].message);
+    if (resolvedSegments[nextIdx].audioUrl) {
+      playSessionAudio(resolvedSegments[nextIdx].audioUrl);
+    }
+    // Phase stays 'playing' — no interruption
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [elapsed, phase, currentSegmentIdx, isMultiSegment]);
 
   // ── Handle completion ─────────────────────────────────────────────────────
   useEffect(() => {
     if (elapsed >= totalDuration && phase !== 'completed' && phase !== 'ready') {
       setPhase('completed');
-      // Stop session audio and play completion bell
       stopSessionAudio();
+      stopBgAudio();
+      // Play completion sound: per-entry override → default bell
+      if (completionAudioSrc && bellAudioRef.current) {
+        bellAudioRef.current.src = completionAudioSrc;
+      }
       if (bellAudioRef.current) {
         bellAudioRef.current.currentTime = 0;
         bellAudioRef.current.play().catch(() => {});
       }
     }
-  }, [elapsed, totalDuration, phase]);
+  }, [elapsed, totalDuration, phase, stopBgAudio, completionAudioSrc]);
 
   // ── Pause / Resume ────────────────────────────────────────────────────────
   const togglePause = () => {
     if (phase === 'completed') return;
     setIsPaused((prev) => {
       if (prev) {
-        // Resuming — play audio
+        // Resuming
         sessionAudioRef.current?.play().catch(() => {});
+        bgAudioRef.current?.play().catch(() => {});
       } else {
-        // Pausing — pause audio
+        // Pausing
         sessionAudioRef.current?.pause();
+        bgAudioRef.current?.pause();
       }
       return !prev;
     });
@@ -228,18 +303,17 @@ export default function ExperienceTimerCard({
   };
 
   // ── Render: phase label for 5min combo ────────────────────────────────────
-  const phaseLabel = isCombo
-    ? comboPhase === 1
-      ? 'Part 1 of 2'
-      : 'Part 2 of 2'
+  const phaseLabel = isMultiSegment
+    ? `Part ${currentSegmentIdx + 1} of ${resolvedSegments.length}`
     : null;
 
   return (
     <div className="experience-timer-card">
-      {/* Hidden audio elements — must be display:none to prevent tooltip/visibility */}
+      {/* Hidden audio elements */}
       <audio ref={sessionAudioRef} preload="auto" style={{ display: 'none' }} />
-      <audio ref={bellAudioRef} src="/still-zone-audio/bell_complete.mp3" preload="auto" style={{ display: 'none' }} />
-      <audio ref={beepAudioRef} src="/still-zone-audio/beep_transition.mp3" preload="auto" style={{ display: 'none' }} />
+      <audio ref={bgAudioRef} preload="auto" style={{ display: 'none' }} />
+      <audio ref={bellAudioRef} src={completionAudioSrc || '/still-zone-audio/bell_complete.mp3'} preload="auto" style={{ display: 'none' }} />
+      <audio ref={beepAudioRef} src={beepAudioSrc || '/still-zone-audio/beep_transition.mp3'} preload="auto" style={{ display: 'none' }} />
 
       {/* ── Badge ──────────────────────────────────────────────────── */}
       <div className="badge-row">
@@ -274,7 +348,7 @@ export default function ExperienceTimerCard({
             cy={RING_SIZE / 2}
             r={RADIUS}
             fill="none"
-            stroke={phase === 'completed' ? '#10b981' : phase === 'transitioning' ? '#f59e0b' : badgeColor}
+            stroke={phase === 'completed' ? '#10b981' : badgeColor}
             strokeWidth={STROKE_WIDTH}
             strokeLinecap="round"
             strokeDasharray={CIRCUMFERENCE}
@@ -307,16 +381,17 @@ export default function ExperienceTimerCard({
               transition: 'width 1s linear, background-color 0.3s ease',
             }}
           />
-          {/* Combo marker at 60% (3min of 5min) */}
-          {isCombo && (
+          {/* Segment boundary markers */}
+          {isMultiSegment && segmentEndTimes.slice(0, -1).map((endTime, i) => (
             <div
+              key={i}
               className="combo-marker"
-              style={{ left: `${(comboSplitAt / totalDuration) * 100}%` }}
+              style={{ left: `${(endTime / totalDuration) * 100}%` }}
             >
               <div className="combo-marker-dot" />
-              <span className="combo-marker-label">3:00</span>
+              <span className="combo-marker-label">{formatTime(endTime)}</span>
             </div>
-          )}
+          ))}
         </div>
         <div className="progress-bar-labels">
           <span>{formatTime(elapsed)}</span>
@@ -325,10 +400,8 @@ export default function ExperienceTimerCard({
       </div>
 
       {/* ── Message ────────────────────────────────────────────────── */}
-      <div className={`message-area ${phase === 'transitioning' ? 'transitioning' : ''}`}>
-        {phase === 'transitioning' ? (
-          <p className="transition-text">Transitioning to next exercise...</p>
-        ) : phase === 'completed' ? (
+      <div className="message-area">
+        {phase === 'completed' ? (
           <>
             <h3 className="completion-title">Session Complete</h3>
             <p className="completion-subtitle">Well done. Take a moment before you move on.</p>
@@ -554,9 +627,6 @@ export default function ExperienceTimerCard({
           padding: 0 8px;
           transition: opacity 0.4s ease;
         }
-        .message-area.transitioning {
-          opacity: 0.6;
-        }
         .message-heading {
           font-size: 18px;
           font-weight: 700;
@@ -578,12 +648,6 @@ export default function ExperienceTimerCard({
         :global(.dark) .message-body,
         :global(.dark-mode) .message-body {
           color: var(--dark-text-secondary, #cbd5e1);
-        }
-        .transition-text {
-          font-size: 15px;
-          font-weight: 500;
-          color: #f59e0b;
-          animation: pulse-text 1.5s ease-in-out infinite;
         }
         .completion-title {
           font-size: 22px;
@@ -721,10 +785,6 @@ export default function ExperienceTimerCard({
           color: var(--dark-text-secondary, #cbd5e1);
         }
 
-        @keyframes pulse-text {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.5; }
-        }
 
         /* ── Responsive ────────────────────────── */
         @media (max-width: 480px) {

@@ -12,7 +12,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
         const {
             mood, context, support_type, time_key, action_type,
             heading, message, display_time, audio_url,
-            is_combo, combo_second_message,
+            background_audio_url, completion_audio_url, beep_audio_url,
+            is_combo, segments, combo_second_message,
             combo_first_audio_url, combo_second_audio_url,
             is_active, sort_order,
         } = body;
@@ -29,7 +30,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
                 message,
                 display_time: Number(display_time) || 60,
                 audio_url: audio_url || null,
+                background_audio_url: background_audio_url || null,
+                completion_audio_url: completion_audio_url || null,
+                beep_audio_url: beep_audio_url || null,
                 is_combo: is_combo ?? false,
+                segments: is_combo ? (segments || null) : null,
                 combo_second_message: combo_second_message || null,
                 combo_first_audio_url: combo_first_audio_url || null,
                 combo_second_audio_url: combo_second_audio_url || null,

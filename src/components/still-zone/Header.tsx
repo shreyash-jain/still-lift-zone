@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Menu, BarChart3, User, LogOut, Home, CreditCard } from 'lucide-react';
 import { Menu, BarChart3, User, Settings, LogOut, Home, CreditCard, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';

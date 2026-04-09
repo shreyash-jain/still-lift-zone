@@ -39,18 +39,20 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // All API routes should be accessible (they handle their own auth)
+  if (pathname.startsWith('/still-zone/api/')) {
+    return NextResponse.next();
+  }
+
   // Public routes that don't need authentication
   const publicRoutes = [
     '/still-zone/signup',
     '/still-zone/login',
-    '/still-zone/api/razorpay',
     '/still-zone/auth/callback',
   ];
 
-  // Check if route is public
-  // Explicitly check for exact matches or sub-paths for the API
   const isPublicRoute = publicRoutes.some(route =>
-    pathname === route || pathname.startsWith(`${route}/`) || pathname.startsWith('/still-zone/api/razorpay')
+    pathname === route || pathname.startsWith(`${route}/`)
   );
 
   if (isPublicRoute) {
