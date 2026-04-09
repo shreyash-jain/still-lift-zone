@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/still-zone-supabase';
 import { Loader2 } from 'lucide-react';
+import { setAuthorizationCookie, removeAuthorizationCookie, TokenKey } from '@/lib/auth-utils';
 
 export default function AuthWrapper({ children }: { children: React.ReactNode }) {
     const router = useRouter();
@@ -19,6 +20,10 @@ export default function AuthWrapper({ children }: { children: React.ReactNode })
                     router.replace('/still-zone/login');
                 } else {
                     setIsAuthenticated(true);
+                    // Ensure cookie is set if session exists (e.g. after hard refresh)
+                    if (session.access_token) {
+                        setAuthorizationCookie(TokenKey.access_token, session.access_token);
+                    }
                 }
             } catch (error) {
                 console.error('Auth check failed:', error);
@@ -33,8 +38,12 @@ export default function AuthWrapper({ children }: { children: React.ReactNode })
         const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
             if (event === 'SIGNED_OUT') {
                 setIsAuthenticated(false);
+                removeAuthorizationCookie(TokenKey.access_token);
                 router.replace('/still-zone/login');
             } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                if (session?.access_token) {
+                    setAuthorizationCookie(TokenKey.access_token, session.access_token);
+                }
                 setIsAuthenticated(true);
             }
         });

@@ -103,10 +103,86 @@ create table public.user_favorites (
 
 ---
 
-## 5. Payments & Subscriptions
-**Purpose**: Stores a history of payments and subscription validity.
+## 5. Payments & Subscriptions (Enhanced)
+**Purpose**: Comprehensive payment tracking with Razorpay integration.
 
-### `public.payment_logs`
+> **Note**: The payment system has been enhanced with three new tables. See `supabase_razorpay_schema.sql` for the complete schema or `RAZORPAY_INTEGRATION.md` for the full documentation.
+
+### `public.payment_plans`
+Stores all available pricing tiers and their features.
+
+```sql
+create table public.payment_plans (
+  id uuid default gen_random_uuid() primary key,
+  plan_key text unique not null,        -- e.g., 'monthly', 'yearly', 'founder'
+  plan_name text not null,              -- Display name
+  description text,
+  price_inr integer not null,           -- Price in paise
+  price_usd integer not null,           -- Price in cents
+  duration_type text not null,          -- 'monthly', 'yearly', 'one_time', 'lifetime'
+  duration_days integer not null,
+  trial_days integer default 0,
+  features jsonb default '[]'::jsonb,
+  is_active boolean default true,
+  is_highlighted boolean default false,
+  highlight_text text,
+  icon_name text,
+  sort_order integer default 0,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+```
+
+### `public.user_plans`
+Maps users to their active subscription status. **Realtime-enabled** for instant frontend updates.
+
+```sql
+create table public.user_plans (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  plan_id uuid references public.payment_plans(id),
+  plan_key text not null,
+  status text not null default 'pending',  -- pending, trial, active, expired, cancelled, failed
+  razorpay_order_id text,
+  razorpay_payment_id text,
+  subscription_start_date timestamptz,
+  subscription_end_date timestamptz,
+  amount_paid integer,
+  currency text default 'INR',
+  metadata jsonb default '{}'::jsonb,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+```
+
+### `public.user_invoices`
+Logs every transaction with PDF links and audit trail.
+
+```sql
+create table public.user_invoices (
+  id uuid default gen_random_uuid() primary key,
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  user_plan_id uuid references public.user_plans(id),
+  invoice_number text unique not null,
+  amount integer not null,
+  currency text not null default 'INR',
+  tax_amount integer default 0,
+  total_amount integer not null,
+  razorpay_order_id text,
+  razorpay_payment_id text unique,
+  razorpay_signature text,
+  status text not null default 'pending',  -- pending, captured, failed, refunded
+  payment_method text,
+  payment_details jsonb default '{}'::jsonb,
+  invoice_pdf_url text,
+  webhook_payload jsonb default '{}'::jsonb,
+  created_at timestamptz default now(),
+  paid_at timestamptz
+);
+```
+
+### Legacy: `public.payment_logs` (Deprecated)
+This table is kept for backward compatibility but new payments should use the tables above.
 
 ```sql
 create table public.payment_logs (

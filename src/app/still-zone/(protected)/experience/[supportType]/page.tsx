@@ -77,6 +77,9 @@ export default function StillZoneExperiencePage() {
       }
     };
 
+  const handleStartOver = () => {
+    router.push('/still-zone');
+  };
     saveMoodEntry();
   }, [mood, context, time, supportType, supportConfig]);
 
