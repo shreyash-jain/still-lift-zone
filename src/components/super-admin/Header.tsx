@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
-import { Menu, LogOut, ShieldAlert } from 'lucide-react';
+import { Menu, LogOut, ShieldAlert, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -105,6 +105,17 @@ export default function SuperAdminHeader() {
                                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M22 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>
                                     </div>
                                     <span className="font-medium text-[14px]">Members</span>
+                                </Link>
+
+                                <Link
+                                    href="/super-admin-stillzone/content"
+                                    onClick={() => setSheetOpen(false)}
+                                    className="group flex items-center gap-3 px-3 py-2 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white transition-all duration-200"
+                                >
+                                    <div className="flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 border border-transparent bg-teal-100 dark:bg-teal-900/40 text-teal-600 dark:text-teal-400 group-hover:scale-105">
+                                        <FileText className="w-4 h-4" />
+                                    </div>
+                                    <span className="font-medium text-[14px]">Content</span>
                                 </Link>
 
                                 <Link

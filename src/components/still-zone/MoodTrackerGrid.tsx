@@ -50,6 +50,11 @@ interface DayEntry {
 }
 
 const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+// Format date as YYYY-MM-DD in local timezone (avoids UTC shift)
+function toLocalDateStr(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 const MONTH_NAMES_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTH_NAMES_FULL = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -102,7 +107,7 @@ export function MoodTrackerGrid({
 function WeekViewGrid({
     className, dailyData, summary,
 }: { className?: string; dailyData: MoodDailyEntry[]; summary: MoodStreakSummary | null }) {
-    const today = new Date().toISOString().split('T')[0];
+    const today = toLocalDateStr(new Date());
 
     const allDays: DayEntry[] = (dailyData || []).map((d) => {
         const dateObj = new Date(d.date + 'T00:00:00');
@@ -195,14 +200,14 @@ function MonthViewGrid({
     }, [dailyData]);
 
     const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = toLocalDateStr(today);
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
 
     const joinDateObj = joinDate ? new Date(joinDate) : new Date();
     const joinMonth = joinDateObj.getMonth();
     const joinYear = joinDateObj.getFullYear();
-    const joinDayStr = joinDateObj.toISOString().split('T')[0];
+    const joinDayStr = toLocalDateStr(joinDateObj);
 
     const [viewMonth, setViewMonth] = useState(currentMonth);
     const [viewYear, setViewYear] = useState(currentYear);
@@ -243,7 +248,7 @@ function MonthViewGrid({
         }
         for (let day = 1; day <= daysInMonth; day++) {
             const d = new Date(viewYear, viewMonth, day);
-            const dStr = d.toISOString().split('T')[0];
+            const dStr = toLocalDateStr(d);
             result.push({
                 dayNum: day,
                 dateStr: dStr,

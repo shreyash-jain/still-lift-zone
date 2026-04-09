@@ -5,10 +5,13 @@ export async function GET(request: Request) {
     try {
         const supabase = getAdminSupabase();
 
+        // Local date helper — avoids UTC timezone shift
+        const toLocal = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
         // 1. Fetch Mood Entries for the last 7 days
         const sevenDaysAgo = new Date();
         sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-        const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
+        const sevenDaysAgoStr = toLocal(sevenDaysAgo);
 
         const { data: entries, error: entriesError } = await supabase
             .from('still_zone_mood_entries')
@@ -53,7 +56,7 @@ export async function GET(request: Request) {
         for (let i = 6; i >= 0; i--) {
             const d = new Date(today);
             d.setDate(today.getDate() - i);
-            const dStr = d.toISOString().split('T')[0];
+            const dStr = toLocal(d);
             last7Dates.push(dStr);
             dailyMoods[dStr] = { date: dStr, totalCount: 0 };
         }

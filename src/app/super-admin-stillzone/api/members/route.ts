@@ -1,16 +1,35 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/super-admin/supabase';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     try {
         const supabase = getAdminSupabase();
+        const { searchParams } = new URL(request.url);
 
-        // 1. Fetch Profiles
-        const { data: profiles, error: pError } = await supabase
+        const page = Math.max(1, Number(searchParams.get('page')) || 1);
+        const limit = Math.min(50, Math.max(1, Number(searchParams.get('limit')) || 10));
+        const search = searchParams.get('search')?.trim() || '';
+        const from = (page - 1) * limit;
+        const to = from + limit - 1;
+
+        // 1. Count total profiles (with optional search filter)
+        let countQuery = supabase.from('profiles').select('id', { count: 'exact', head: true });
+        if (search) {
+            countQuery = countQuery.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
+        }
+        const { count: totalCount, error: countError } = await countQuery;
+        if (countError) throw countError;
+
+        // 2. Fetch paginated profiles
+        let profileQuery = supabase
             .from('profiles')
             .select('*')
-            .order('created_at', { ascending: false });
-
+            .order('created_at', { ascending: false })
+            .range(from, to);
+        if (search) {
+            profileQuery = profileQuery.or(`full_name.ilike.%${search}%,email.ilike.%${search}%`);
+        }
+        const { data: profiles, error: pError } = await profileQuery;
         if (pError) throw pError;
 
         // 2. Fetch User Plans (to determine accurate subscription tier)
@@ -26,10 +45,14 @@ export async function GET() {
             activePlansMap.set(p.user_id, p);
         });
 
-        // 3. Fetch ALL mood tracking entries (no date limit — chart starts from join date)
-        const { data: entries, error: eError } = await supabase
-            .from('still_zone_mood_entries')
-            .select('user_id, time_key, support_key, entry_date, mood_key, updated_at, created_at');
+        // 3. Fetch mood entries only for the paginated users
+        const userIds = (profiles || []).map(p => p.id);
+        const { data: entries, error: eError } = userIds.length > 0
+            ? await supabase
+                .from('still_zone_mood_entries')
+                .select('user_id, time_key, support_key, entry_date, mood_key, updated_at, created_at')
+                .in('user_id', userIds)
+            : { data: [], error: null };
 
         if (eError) throw eError;
 
@@ -102,14 +125,21 @@ export async function GET() {
             const isCurrentlyActive = mostRecentActivity ? mostRecentActivity >= fifteenMinsAgo : false;
 
             // Generate full activity chart from join date to today
+            // Use local date formatting to avoid UTC timezone shift
+            const toLocal = (d: Date) => {
+                const y = d.getFullYear();
+                const m = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                return `${y}-${m}-${dd}`;
+            };
             const dailyActivityChart = [];
             const today = new Date();
-            const todayStr = today.toISOString().split('T')[0];
+            const todayStr = toLocal(today);
             const joinDateStr = p.created_at ? p.created_at.split('T')[0] : todayStr;
             const startDate = new Date(joinDateStr + 'T00:00:00');
             const cursor = new Date(startDate);
-            while (cursor.toISOString().split('T')[0] <= todayStr) {
-                const dStr = cursor.toISOString().split('T')[0];
+            while (toLocal(cursor) <= todayStr) {
+                const dStr = toLocal(cursor);
                 dailyActivityChart.push({
                     date: dStr,
                     tracked: stats.trackedDates.has(dStr),
@@ -163,9 +193,11 @@ export async function GET() {
             };
         });
 
+        const total = totalCount || 0;
         return NextResponse.json({
             success: true,
             data: members,
+            pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
         });
     } catch (error: unknown) {
         console.error('SuperAdmin Members fetch error:', error);

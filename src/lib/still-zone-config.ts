@@ -46,8 +46,8 @@ export interface TimeOption {
 export const TIME_OPTIONS: TimeOption[] = [
     { key: '1min', value: 1, label: '1 minute' },
     { key: '2min', value: 2, label: '2 minutes' },
+    { key: '3min', value: 3, label: '3 minutes' },
     { key: '5min', value: 5, label: '5 minutes' },
-    { key: '10min', value: 10, label: '10 minutes' },
 ];
 
 // ─── Support Options ───────────────────────────────────────────────────────────
@@ -140,6 +140,7 @@ export const SUPPORT_OPTIONS: SupportOption[] = [
 export const AUDIO_FILE_MAP: Record<string, string> = {
     breathing_calm: '/audio/breathing_calm.mp3',
     audio_soothing: '/audio/audio_soothing.mp3',
+    beep_transition: '/audio/beep_transition.mp3', // Beep played between 3min and 2min parts in 5min combos
     // Add more mappings as audio files are added to /public/audio/
 };
 
