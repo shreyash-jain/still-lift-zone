@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/super-admin/supabase';
 import { jwtVerify } from 'jose';
@@ -65,7 +67,7 @@ export async function POST(request: Request) {
                     const razorpayKeyId = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
                     const razorpayKeySecret = process.env.RAZORPAY_KEY_SECRET;
                     if (razorpayKeyId && razorpayKeySecret) {
-                        const credentials = Buffer.from(`${razorpayKeyId}:${razorpayKeySecret}`).toString('base64');
+                        const credentials = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
                         const rzpRes = await fetch(
                             `https://api.razorpay.com/v1/subscriptions/${plan.razorpay_subscription_id}/cancel`,
                             {

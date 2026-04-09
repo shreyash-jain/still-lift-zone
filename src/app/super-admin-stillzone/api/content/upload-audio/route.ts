@@ -1,3 +1,5 @@
+export const runtime = 'edge';
+
 import { NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/super-admin/supabase';
 
@@ -36,11 +38,10 @@ export async function POST(request: Request) {
         const storagePath = `${pathPrefix}/${Date.now()}-${safeName}`;
 
         const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
 
         const { data, error } = await supabase.storage
             .from(BUCKET)
-            .upload(storagePath, buffer, {
+            .upload(storagePath, new Uint8Array(arrayBuffer), {
                 contentType: file.type,
                 upsert: false,
             });
