@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Menu, BarChart3, User, LogOut, Home, CreditCard } from 'lucide-react';
+import { Menu, BarChart3, User, Settings, LogOut, Home, CreditCard, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
@@ -44,6 +45,7 @@ export default function StillZoneHeader() {
     const navItems = [
         { label: 'Home', icon: Home, href: '/still-zone', color: 'text-sky-600 dark:text-sky-400', bg: 'bg-sky-100 dark:bg-sky-900/40' },
         { label: 'Dashboard', icon: BarChart3, href: '/still-zone/dashboard', color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-100 dark:bg-violet-900/40' },
+        { label: 'Journal', icon: BookOpen, href: '/still-zone/journal', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-100 dark:bg-orange-900/40' },
         { label: 'Active Plan', icon: CreditCard, href: '/still-zone/my-plan', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/40' },
         { label: 'Profile', icon: User, href: '/still-zone/profile', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/40' },
     ];
