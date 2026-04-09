@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter, useSearchParams, useParams } from "next/navigation";
 import { supabase } from "@/lib/still-zone-supabase";
-import { getSupportByKey } from "@/lib/still-zone-config";
-import ActionRevealCard from "@/components/ActionRevealCard";
+import { getSupportByKey, getTimeByKey } from "@/lib/still-zone-config";
+import { useStillZoneContent } from "@/hooks/useStillZoneContent";
+import ExperienceTimerCard from "@/components/still-zone/ExperienceTimerCard";
+import { Loader2 } from "lucide-react";
 
-// Sanitize URL params — treat "null"/"undefined"/empty as missing
 function sanitizeParam(val: string | null): string | null {
   if (!val || val === 'null' || val === 'undefined' || val.trim() === '') return null;
   return val.trim();
@@ -19,35 +20,47 @@ export default function StillZoneExperiencePage() {
   const hasSaved = useRef(false);
   const sessionStartRef = useRef<number>(Date.now());
 
-  // Get and sanitize parameters
   const supportType = params.supportType as string;
   const mood = sanitizeParam(searchParams.get('mood'));
   const context = sanitizeParam(searchParams.get('context'));
   const time = sanitizeParam(searchParams.get('time'));
 
-  // Get support content from config (dynamic, not hardcoded)
   const supportConfig = getSupportByKey(supportType);
-  const supportContent = supportConfig
-    ? { message: supportConfig.message, action: supportConfig.action, actionType: supportConfig.actionType }
-    : { message: 'You are stronger than you think. This moment will pass.', action: 'Remember: One step at a time', actionType: 'advice' };
+  const timeConfig = time ? getTimeByKey(time) : null;
+  const totalDuration = timeConfig ? timeConfig.value * 60 : 60;
 
-  // Save mood entry to DB on page load (only if ALL 4 selections are valid)
+  // Fetch content from DB (with hardcoded fallback)
+  const { message: dynamicContent, isLoading } = useStillZoneContent({
+    mood: mood || '',
+    context: context || '',
+    supportType: supportType || '',
+    timeKey: time || '',
+  });
+
+  const contentMessage = dynamicContent?.message
+    || supportConfig?.message
+    || 'You are stronger than you think. This moment will pass.';
+  // Only show heading if admin explicitly set one — no hardcoded fallback
+  const contentAction = dynamicContent?.heading || '';
+  const contentActionType = supportConfig?.actionType || 'advice';
+  const isCombo = dynamicContent?.isCombo || false;
+  const comboSecondMessage = dynamicContent?.comboSecondMessage;
+  const audioSrc = dynamicContent?.audioSrc;
+  const comboFirstAudioSrc = dynamicContent?.comboFirstAudioSrc;
+  const comboSecondAudioSrc = dynamicContent?.comboSecondAudioSrc;
+
+  // Save mood entry to DB on page load
   useEffect(() => {
     if (hasSaved.current) return;
 
     const saveMoodEntry = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
-
-        // Only save if ALL params are valid — prevent saving "null" strings
-        if (!user || !mood || !context || !time || !supportType) {
-          console.warn('Skipping mood entry save — missing or invalid params:', { mood, context, time, supportType });
-          return;
-        }
+        if (!user || !mood || !context || !time || !supportType) return;
 
         hasSaved.current = true;
 
-        const res = await fetch('/still-zone/api/mood-entry', {
+        await fetch('/still-zone/api/mood-entry', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -59,11 +72,6 @@ export default function StillZoneExperiencePage() {
             audioKey: supportConfig?.audioKey || null,
           }),
         });
-
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          console.error('Mood entry save failed:', errData);
-        }
       } catch (err) {
         console.error('Failed to save mood entry:', err);
       }
@@ -72,17 +80,16 @@ export default function StillZoneExperiencePage() {
     saveMoodEntry();
   }, [mood, context, time, supportType, supportConfig]);
 
-  // Track actual session duration — save on page leave
+  // Save session duration on unmount
   useEffect(() => {
     const saveSessionDuration = async () => {
       const durationSec = Math.round((Date.now() - sessionStartRef.current) / 1000);
-      if (durationSec < 2) return; // Ignore accidental quick visits
+      if (durationSec < 2) return;
 
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // Update today's entry with actual duration spent
         await fetch('/still-zone/api/mood-entry', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -96,38 +103,49 @@ export default function StillZoneExperiencePage() {
       }
     };
 
-    // Save duration when user leaves
-    return () => {
-      saveSessionDuration();
-    };
+    return () => { saveSessionDuration(); };
   }, []);
 
-  const handleStartOver = () => {
-    router.push('/still-zone/home');
-  };
-
-  const handleTryAnother = () => {
+  const handleStartOver = () => router.push('/still-zone');
+  const handleTryAnother = () =>
     router.push(`/still-zone/support-selection?mood=${mood}&context=${context}&time=${time}`);
-  };
+  const handleComplete = () => router.push('/still-zone');
+
+  // Show loading state while fetching content from DB
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center"
+        style={{ background: 'linear-gradient(145deg, #f0f4f8 0%, #e8edf5 50%, #f5f3ff 100%)' }}>
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-8 h-8 animate-spin text-teal-500" />
+          <p className="text-sm text-slate-500">Preparing your session...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen relative overflow-hidden font-inter">
-      {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col items-center justify-center" style={{ position: 'relative', zIndex: 10, minHeight: 'calc(100vh - 80px)' }}>
-        <div className="container max-w-4xl mx-auto px-4">
-          {/* Action Reveal Card */}
-          <ActionRevealCard
-            message={supportContent.message}
-            action={supportContent.action}
-            actionType={supportContent.actionType}
-            onStartOver={handleStartOver}
-            onTryAnother={handleTryAnother}
-            showCard={true}
-            isEmerging={false}
-            isFullyRevealed={true}
-            isStatic={true}
-          />
-        </div>
+    <div className="min-h-screen relative overflow-hidden font-inter flex items-center justify-center"
+      style={{
+        background: 'linear-gradient(145deg, #f0f4f8 0%, #e8edf5 50%, #f5f3ff 100%)',
+        minHeight: '100vh',
+      }}
+    >
+      <main className="w-full flex flex-col items-center justify-center px-4 py-8">
+        <ExperienceTimerCard
+          message={contentMessage}
+          action={contentAction}
+          actionType={contentActionType}
+          totalDuration={totalDuration}
+          isCombo={isCombo}
+          comboSecondMessage={comboSecondMessage}
+          audioSrc={audioSrc}
+          comboFirstAudioSrc={comboFirstAudioSrc}
+          comboSecondAudioSrc={comboSecondAudioSrc}
+          onTryAnother={handleTryAnother}
+          onStartOver={handleStartOver}
+          onComplete={handleComplete}
+        />
       </main>
     </div>
   );

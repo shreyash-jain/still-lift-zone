@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import {
@@ -82,6 +82,8 @@ export default function MembersPage() {
     const [customDateTo, setCustomDateTo] = useState('');
 
     const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [totalCount, setTotalCount] = useState(0);
     const itemsPerPage = 10;
 
     const [selectedMember, setSelectedMember] = useState<Member | null>(null);
@@ -103,11 +105,16 @@ export default function MembersPage() {
 
     const router = useRouter();
 
-    const fetchMembers = async () => {
+    const fetchMembers = async (page = currentPage, search = searchTerm) => {
         try {
             setLoading(true);
             setError('');
-            const response = await fetch('/super-admin-stillzone/api/members');
+            const params = new URLSearchParams();
+            params.set('page', String(page));
+            params.set('limit', String(itemsPerPage));
+            if (search) params.set('search', search);
+
+            const response = await fetch(`/super-admin-stillzone/api/members?${params}`);
             if (!response.ok) {
                 if (response.status === 401) {
                     router.push('/super-admin-stillzone/login');
@@ -118,6 +125,10 @@ export default function MembersPage() {
             const result = await response.json();
             if (result.success) {
                 setMembers(result.data);
+                if (result.pagination) {
+                    setTotalPages(result.pagination.totalPages);
+                    setTotalCount(result.pagination.total);
+                }
             } else {
                 throw new Error(((result as Error).message));
             }
@@ -128,16 +139,29 @@ export default function MembersPage() {
         }
     };
 
+    // Debounce search
+    const [debouncedSearch, setDebouncedSearch] = useState('');
+    const prevSearchRef = useRef(debouncedSearch);
     useEffect(() => {
-        fetchMembers();
-    }, [router]);
+        const timer = setTimeout(() => setDebouncedSearch(searchTerm), 400);
+        return () => clearTimeout(timer);
+    }, [searchTerm]);
 
+    // Single fetch — reset page when search changes, then fetch
+    useEffect(() => {
+        const searchChanged = prevSearchRef.current !== debouncedSearch;
+        prevSearchRef.current = debouncedSearch;
+        const page = searchChanged ? 1 : currentPage;
+        if (searchChanged && currentPage !== 1) {
+            setCurrentPage(1); // will re-trigger this effect with page=1
+            return;
+        }
+        fetchMembers(page, debouncedSearch);
+    }, [currentPage, debouncedSearch]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Client-side filters for plan and date (search is server-side)
     const filteredMembers = useMemo(() => {
         return members.filter(member => {
-            const matchesSearch =
-                member.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                member.email.toLowerCase().includes(searchTerm.toLowerCase());
-
             const matchesPlan = planFilter === 'All Plans' ||
                 member.subscriptionPlan.toLowerCase().includes(planFilter.toLowerCase());
 
@@ -159,19 +183,12 @@ export default function MembersPage() {
                 }
             }
 
-            return matchesSearch && matchesPlan && matchesJoined;
+            return matchesPlan && matchesJoined;
         });
-    }, [members, searchTerm, planFilter, joinedFilter, customDateFrom, customDateTo]);
+    }, [members, planFilter, joinedFilter, customDateFrom, customDateTo]);
 
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [searchTerm, planFilter, joinedFilter, customDateFrom, customDateTo]);
-
-    const totalPages = Math.ceil(filteredMembers.length / itemsPerPage);
-    const paginatedMembers = useMemo(() => {
-        const start = (currentPage - 1) * itemsPerPage;
-        return filteredMembers.slice(start, start + itemsPerPage);
-    }, [filteredMembers, currentPage]);
+    // paginatedMembers is now just filteredMembers (pagination is server-side)
+    const paginatedMembers = filteredMembers;
 
     const handleRowClick = (member: Member) => {
         setSelectedMember(member);
@@ -522,7 +539,7 @@ export default function MembersPage() {
                     {totalPages > 1 && (
                         <div className="flex items-center justify-between px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
                             <p className="text-sm text-slate-500 dark:text-slate-400">
-                                Showing <span className="font-medium text-slate-900 dark:text-slate-100">{((currentPage - 1) * itemsPerPage) + 1}</span> to <span className="font-medium text-slate-900 dark:text-slate-100">{Math.min(currentPage * itemsPerPage, filteredMembers.length)}</span> of <span className="font-medium text-slate-900 dark:text-slate-100">{filteredMembers.length}</span> members
+                                Showing <span className="font-medium text-slate-900 dark:text-slate-100">{((currentPage - 1) * itemsPerPage) + 1}</span> to <span className="font-medium text-slate-900 dark:text-slate-100">{Math.min(currentPage * itemsPerPage, totalCount)}</span> of <span className="font-medium text-slate-900 dark:text-slate-100">{totalCount}</span> members
                             </p>
                             <div className="flex items-center gap-2">
                                 <Button

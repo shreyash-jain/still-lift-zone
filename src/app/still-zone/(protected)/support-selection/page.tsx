@@ -27,7 +27,7 @@ export default function SupportSelectionPage() {
   // If params are missing, redirect back to start the flow properly
   useEffect(() => {
     if (!mood || !context || !time) {
-      router.replace('/still-zone/home');
+      router.replace('/still-zone');
     }
   }, [mood, context, time, router]);
 

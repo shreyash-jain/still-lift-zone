@@ -8,6 +8,14 @@ function getSupabase() {
     return createClient(supabaseUrl, supabaseServiceKey);
 }
 
+// Local date string (YYYY-MM-DD) — avoids UTC timezone shift
+function toLocalDate(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${dd}`;
+}
+
 /**
  * POST /still-zone/api/mood-entry
  * Save a mood tracking entry for the user.
@@ -30,8 +38,8 @@ export async function POST(request: Request) {
 
         const supabase = getSupabase();
 
-        // Date only (YYYY-MM-DD) for day-wise tracking
-        const today = new Date().toISOString().split('T')[0];
+        // Date only (YYYY-MM-DD) for day-wise tracking — use local date, not UTC
+        const today = toLocalDate(new Date());
 
         // Check if user already tracked today — upsert (one entry per day)
         const { data: existing } = await supabase
@@ -104,7 +112,7 @@ export async function PATCH(request: Request) {
         }
 
         const supabase = getSupabase();
-        const today = new Date().toISOString().split('T')[0];
+        const today = toLocalDate(new Date());
 
         // Find today's entry for this user
         const { data: existing } = await supabase
@@ -198,7 +206,7 @@ export async function GET(request: Request) {
             .from('still_zone_mood_entries')
             .select('*')
             .eq('user_id', userId)
-            .gte('entry_date', planStartDate.toISOString().split('T')[0])
+            .gte('entry_date', toLocalDate(planStartDate))
             .order('entry_date', { ascending: true });
 
         if (error) {
@@ -234,7 +242,7 @@ export async function GET(request: Request) {
 
         // 4. Build day-by-day data from plan start date to today
         const today = new Date();
-        today.setHours(23, 59, 59, 999);
+        const todayStr = toLocalDate(today);
         const dailyData: {
             date: string;
             tracked: boolean;
@@ -242,8 +250,8 @@ export async function GET(request: Request) {
         }[] = [];
 
         const current = new Date(planStartDate);
-        while (current <= today) {
-            const dateKey = current.toISOString().split('T')[0];
+        while (toLocalDate(current) <= todayStr) {
+            const dateKey = toLocalDate(current);
             const entry = entryMap[dateKey];
             dailyData.push({
                 date: dateKey,
@@ -291,7 +299,7 @@ export async function GET(request: Request) {
                 longest: longestStreak,
                 totalTracked,
                 totalDays: dailyData.length,
-                startDate: planStartDate.toISOString().split('T')[0],
+                startDate: toLocalDate(planStartDate),
             },
             // --- Streak reset logic (disabled for now, kept for future use) ---
             // resetStreak: To implement streak reset:

@@ -7,9 +7,12 @@ export async function GET() {
         trace.push("setup");
         const supabase = getAdminSupabase();
 
+        // Local date helper — avoids UTC timezone shift
+        const toLocal = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+
         // 1. Daily Active Users (DAU) - Tracked mood entries today
         trace.push("dau_query");
-        const todayStr = new Date().toISOString().split('T')[0];
+        const todayStr = toLocal(new Date());
 
         const { data: dauData, error: dauError } = await supabase
             .from('still_zone_mood_entries')
@@ -129,7 +132,7 @@ export async function GET() {
         for (let i = 29; i >= 0; i--) {
             const d = new Date();
             d.setDate(d.getDate() - i);
-            const dStr = d.toISOString().split('T')[0];
+            const dStr = toLocal(d);
             const dayData = moodByDate[dStr];
             if (dayData) {
                 // Pick most frequent mood of the day

@@ -21,6 +21,14 @@ const MONTH_NAMES = [
 ];
 const DAY_HEADERS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+// Format date as YYYY-MM-DD in local timezone (avoids UTC shift bug)
+function toLocalDateStr(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
 export function AdminMoodCalendar({ dailyData, joinDate }: AdminMoodCalendarProps) {
     // Build a lookup map: date string → { tracked, mood }
     const dataMap = useMemo(() => {
@@ -36,7 +44,7 @@ export function AdminMoodCalendar({ dailyData, joinDate }: AdminMoodCalendarProp
     const today = new Date();
     const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
-    const todayStr = today.toISOString().split('T')[0];
+    const todayStr = toLocalDateStr(today);
 
     // State: which month to display (default = current month)
     const [viewMonth, setViewMonth] = useState(currentMonth);
@@ -72,7 +80,7 @@ export function AdminMoodCalendar({ dailyData, joinDate }: AdminMoodCalendarProp
         const startDayOfWeek = firstDay.getDay(); // 0=Sun
         const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
 
-        const joinDayStr = joinDateObj.toISOString().split('T')[0];
+        const joinDayStr = toLocalDateStr(joinDateObj);
 
         type Cell = {
             dayNum: number | null;
@@ -92,7 +100,7 @@ export function AdminMoodCalendar({ dailyData, joinDate }: AdminMoodCalendarProp
 
         for (let day = 1; day <= daysInMonth; day++) {
             const d = new Date(viewYear, viewMonth, day);
-            const dStr = d.toISOString().split('T')[0];
+            const dStr = toLocalDateStr(d);
             cells.push({
                 dayNum: day,
                 dateStr: dStr,
