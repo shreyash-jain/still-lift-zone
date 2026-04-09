@@ -3,11 +3,6 @@
 import * as React from "react"
 import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { XIcon } from "lucide-react"
-
-import { cn } from "@/lib/utils"
-import { XIcon } from "lucide-react"
-import { Dialog as DialogPrimitive } from "radix-ui"
-
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 
@@ -95,7 +90,6 @@ function DialogHeader({ className, ...props }: React.ComponentProps<"div">) {
   )
 }
 
-function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
 function DialogFooter({
   className,
   showCloseButton = false,
@@ -112,7 +106,6 @@ function DialogFooter({
         className
       )}
       {...props}
-    />
     >
       {children}
       {showCloseButton && (

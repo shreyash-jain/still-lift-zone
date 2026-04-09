@@ -44,8 +44,12 @@ export default function StillZoneExperiencePage() {
   const contentAction = dynamicContent?.heading || '';
   const contentActionType = supportConfig?.actionType || 'advice';
   const isCombo = dynamicContent?.isCombo || false;
+  const segments = dynamicContent?.segments;
   const comboSecondMessage = dynamicContent?.comboSecondMessage;
   const audioSrc = dynamicContent?.audioSrc;
+  const backgroundAudioSrc = dynamicContent?.backgroundAudioSrc;
+  const completionAudioSrc = dynamicContent?.completionAudioSrc;
+  const beepAudioSrc = dynamicContent?.beepAudioSrc;
   const comboFirstAudioSrc = dynamicContent?.comboFirstAudioSrc;
   const comboSecondAudioSrc = dynamicContent?.comboSecondAudioSrc;
 
@@ -141,8 +145,12 @@ export default function StillZoneExperiencePage() {
           actionType={contentActionType}
           totalDuration={totalDuration}
           isCombo={isCombo}
+          segments={segments}
+          beepAudioSrc={beepAudioSrc}
           comboSecondMessage={comboSecondMessage}
           audioSrc={audioSrc}
+          backgroundAudioSrc={backgroundAudioSrc}
+          completionAudioSrc={completionAudioSrc}
           comboFirstAudioSrc={comboFirstAudioSrc}
           comboSecondAudioSrc={comboSecondAudioSrc}
           onTryAnother={handleTryAnother}

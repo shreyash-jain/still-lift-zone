@@ -2,20 +2,31 @@
 // Structure: mood → context → supportType → timeKey → messages[]
 // This allows precise content delivery based on all 4 user selections.
 
+export interface ContentSegment {
+  duration: number;    // seconds for this segment
+  message: string;     // text shown during this segment
+  audioUrl?: string;   // voice audio for this segment
+}
+
 export interface StillZoneContentMessage {
   actionType: 'VISUALIZE' | 'ACTION' | 'REPEAT' | 'BREATHE' | 'LISTEN';
-  heading?: string;  // admin-editable heading shown above message
-  message: string;
-  displayTime: number; // seconds
-  audioIndex: number;  // 1-indexed, for ElevenLabs audio mapping
-  audioSrc?: string;   // path to audio file in /public (e.g. '/still-zone-audio/file.mp3')
-  // For 5min combined entries: plays 3min audio → beep → 2min audio
-  isCombo?: boolean;           // true for 5min combined entries
-  comboFirstAudioIndex?: number;  // audioIndex of the 3min part
-  comboSecondAudioIndex?: number; // audioIndex of the 2min part
-  comboSecondMessage?: string;    // message for the 2min part (shown after beep)
-  comboFirstAudioSrc?: string;    // audio file for 3min part
-  comboSecondAudioSrc?: string;   // audio file for 2min part
+  heading?: string;
+  message: string;           // for single-segment entries
+  displayTime: number;       // total duration in seconds
+  audioIndex: number;        // legacy
+  audioSrc?: string;         // for single-segment entries
+  backgroundAudioSrc?: string;  // loops after voice audio ends
+  completionAudioSrc?: string;  // plays when timer finishes
+  beepAudioSrc?: string;        // plays between segments
+  // Multi-segment support (replaces hardcoded combo)
+  isCombo?: boolean;
+  segments?: ContentSegment[];  // dynamic segments defined by admin
+  // Legacy combo fields (kept for backward compatibility)
+  comboFirstAudioIndex?: number;
+  comboSecondAudioIndex?: number;
+  comboSecondMessage?: string;
+  comboFirstAudioSrc?: string;
+  comboSecondAudioSrc?: string;
 }
 
 // mood → context → supportType → timeKey → messages[]

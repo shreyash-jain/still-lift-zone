@@ -10,66 +10,63 @@ import { toast } from 'sonner';
 export default function AuthCallbackPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const hasShownToast = useRef(false);
+    const hasHandled = useRef(false);
 
     useEffect(() => {
+        if (hasHandled.current) return;
+        hasHandled.current = true;
+
         const handleAuthCallback = async () => {
             const { data: { session }, error } = await supabase.auth.getSession();
 
-            if (error) {
-                console.error('Error fetching session:', error);
+            if (error || !session?.access_token) {
                 toast.error('Authentication failed. Please try again.');
                 router.replace('/still-zone/login');
                 return;
             }
 
-            if (session?.access_token) {
-                const userTimestamp = new Date(session.user.created_at).getTime();
-                const now = new Date().getTime();
-                // If user was created less than 60 seconds ago, they are "new".
-                const isNewUser = (now - userTimestamp) < 60 * 1000;
+            const intent = searchParams.get('intent'); // 'signup' or 'login'
 
-                const intent = searchParams.get('intent'); // 'signup' or 'login'
+            // Check if user has completed signup — check both tables (old users may only have profiles)
+            const [{ data: szUser }, { data: profile }] = await Promise.all([
+                supabase.from('still_zone_users').select('id').eq('id', session.user.id).maybeSingle(),
+                supabase.from('profiles').select('id').eq('id', session.user.id).maybeSingle(),
+            ]);
 
-                // STRICT CHECK: Block existing users from "Signing Up"
-                if (intent === 'signup' && !isNewUser) {
+            const hasCompletedSignup = !!(szUser || profile);
+
+            // ── SIGNUP INTENT ──
+            if (intent === 'signup') {
+                if (hasCompletedSignup) {
+                    // Already has an account — don't let them "sign up" again
                     await supabase.auth.signOut();
-                    toast.error('You already have an account on Still Zone. Please login.');
+                    toast.error('You already have an account. Please login.');
                     router.replace('/still-zone/login');
                     return;
                 }
 
-                // STRICT CHECK: Block new users from "Signing In" (if they don't exist)
-                if (intent === 'login' && isNewUser) {
-                    await supabase.auth.signOut();
-                    toast.error('Account not found. Please sign up first.');
-                    router.replace('/still-zone/signup');
-                    return;
-                }
-
-                // Set cookies
-                setAuthorizationCookie(TokenKey.access_token, session.access_token);
-                if (session.refresh_token) {
-                    setAuthorizationCookie(TokenKey.refresh_token, session.refresh_token);
-                }
-
-                if (!hasShownToast.current) {
-                    if (isNewUser) {
-                        toast.success('Account created successfully!');
-                    } else {
-                        toast.success('Welcome to Still Zone');
-                    }
-                    hasShownToast.current = true;
-                }
-
-                router.replace('/still-zone');
-            } else {
-                if (!hasShownToast.current) {
-                    toast.error('No session found. Please try again.');
-                    hasShownToast.current = true;
-                }
-                router.replace('/still-zone/login');
+                // New or incomplete signup — redirect to signup to collect details + plan + payment
+                toast.success('Google account connected! Just a few more details.');
+                router.replace('/still-zone/signup?provider=google');
+                return;
             }
+
+            // ── LOGIN INTENT ──
+            if (!hasCompletedSignup) {
+                // Has Google auth but never finished signup — send to signup
+                toast.info('Please complete your signup first.');
+                router.replace('/still-zone/signup?provider=google');
+                return;
+            }
+
+            // Fully signed up user logging in — set cookies and go to dashboard
+            setAuthorizationCookie(TokenKey.access_token, session.access_token);
+            if (session.refresh_token) {
+                setAuthorizationCookie(TokenKey.refresh_token, session.refresh_token);
+            }
+
+            toast.success('Welcome back to Still Zone!');
+            router.replace('/still-zone');
         };
 
         handleAuthCallback();

@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
         const { data: plans, error: plansError } = await supabase
             .from('user_plans')
             .select('user_id, status, current_period_end, plan_key')
-            .in('status', ['active', 'trialing']);
+            .in('status', ['active', 'trial', 'pending']);
 
         if (plansError) throw plansError;
 
