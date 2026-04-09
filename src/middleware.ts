@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 // Still Zone - Route Protection Middleware
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
