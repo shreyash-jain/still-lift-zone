@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { verifyRazorpaySignature } from '@/lib/razorpay';
+import { verifyRazorpaySignature } from '@/lib/razorpay-subscriptions';
 import { createInvoice, updateInvoiceOnCapture } from '@/lib/razorpay/database';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
