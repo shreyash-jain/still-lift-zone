@@ -2,8 +2,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
 
 // Timezone-safe date formatter — always returns YYYY-MM-DD in local time
 function toLocalDateStr(d: Date): string {
@@ -22,6 +21,8 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'userId is required' }, { status: 400 });
         }
 
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+        const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
         const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
         // 1. Get user's enrollment/purchase date from user_plans

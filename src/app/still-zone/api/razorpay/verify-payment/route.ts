@@ -3,11 +3,12 @@ import { createClient } from '@supabase/supabase-js';
 import { verifyRazorpaySignature } from '@/lib/razorpay-subscriptions';
 import { createInvoice, updateInvoiceOnCapture } from '@/lib/razorpay/database';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
 
 export async function POST(request: Request) {
   try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
     const body = await request.json();
     const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature, userId, planId, planKey } = body;
 

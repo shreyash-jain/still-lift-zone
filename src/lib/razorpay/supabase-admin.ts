@@ -7,17 +7,8 @@
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Environment Variables
+// Admin Client
 // ═══════════════════════════════════════════════════════════════════════════════
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// Admin Client Singleton
-// ═══════════════════════════════════════════════════════════════════════════════
-
-let adminClient: SupabaseClient | null = null;
 
 /**
  * Get Supabase admin client with service role privileges
@@ -26,9 +17,8 @@ let adminClient: SupabaseClient | null = null;
  * @throws Error if service role key is not configured
  */
 export function getSupabaseAdmin(): SupabaseClient {
-    if (adminClient) {
-        return adminClient;
-    }
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl) {
         throw new Error('NEXT_PUBLIC_SUPABASE_URL is not configured');
@@ -42,19 +32,17 @@ export function getSupabaseAdmin(): SupabaseClient {
         );
     }
 
-    adminClient = createClient(supabaseUrl, supabaseServiceKey, {
+    return createClient(supabaseUrl, supabaseServiceKey, {
         auth: {
             autoRefreshToken: false,
             persistSession: false,
         },
     });
-
-    return adminClient;
 }
 
 /**
  * Check if admin client is properly configured
  */
 export function isAdminConfigured(): boolean {
-    return !!(supabaseUrl && supabaseServiceKey);
+    return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
 }

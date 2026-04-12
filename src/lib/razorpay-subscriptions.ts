@@ -1,11 +1,16 @@
 // Razorpay server-side utilities — Subscriptions API
 // Uses fetch API directly — no SDK dependency needed
 
-const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '';
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '';
+function getRazorpayKeyId(): string {
+  return process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || '';
+}
+
+function getRazorpayKeySecret(): string {
+  return process.env.RAZORPAY_KEY_SECRET || '';
+}
 
 function getAuthHeader(): string {
-  return 'Basic ' + btoa(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`);
+  return 'Basic ' + btoa(`${getRazorpayKeyId()}:${getRazorpayKeySecret()}`);
 }
 
 const RZP_BASE = 'https://api.razorpay.com/v1';
@@ -106,7 +111,7 @@ export async function verifyRazorpaySignature(
 
   const key = await crypto.subtle.importKey(
     'raw',
-    encoder.encode(RAZORPAY_KEY_SECRET),
+    encoder.encode(getRazorpayKeySecret()),
     { name: 'HMAC', hash: 'SHA-256' },
     false,
     ['sign']
