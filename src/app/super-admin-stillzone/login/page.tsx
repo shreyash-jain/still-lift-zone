@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { ShieldAlert } from 'lucide-react';
 
 export default function SuperAdminLogin() {
@@ -9,7 +8,6 @@ export default function SuperAdminLogin() {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const router = useRouter();
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -29,10 +27,9 @@ export default function SuperAdminLogin() {
                 throw new Error(((data as Error).message) || 'Login failed');
             }
 
-            router.push('/super-admin-stillzone');
+            window.location.href = '/super-admin-stillzone';
         } catch (err: unknown) {
             setError(((err as Error).message) || 'An error occurred. Please try again.');
-        } finally {
             setLoading(false);
         }
     };
