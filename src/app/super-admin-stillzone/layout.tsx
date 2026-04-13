@@ -4,7 +4,10 @@ import Background from '@/components/Background';
 import SuperAdminHeader from '@/components/super-admin/Header';
 
 export const metadata: Metadata = {
-    title: 'Super Admin Portal | StillZone',
+    title: {
+        default: 'Superadmin Portal',
+        template: 'Superadmin Portal',
+    },
     description: 'Super Admin Dashboard for monitoring StillZone operations.',
 };
 
