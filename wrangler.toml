@@ -9,6 +9,6 @@ binding = "ASSETS"
 
 [vars]
 NEXT_PRIVATE_DEBUG_CACHE = "1"
-SUPER_ADMIN_EMAIL = "admin@stillzone.com"
-SUPER_ADMIN_PASSWORD = "admin123"
-SUPER_ADMIN_JWT_SECRET = "super_secret_jwt_key_for_stillzone_admin_dashboard_2026"
+# SUPER_ADMIN_EMAIL, SUPER_ADMIN_PASSWORD, SUPER_ADMIN_JWT_SECRET
+# are set in Cloudflare Worker dashboard → Variables and Secrets (as Secrets).
+# Do NOT commit them here — this file is in git.
