@@ -2,18 +2,23 @@
 import { NextResponse } from 'next/server';
 import { SignJWT } from 'jose';
 
-const JWT_SECRET = process.env.SUPER_ADMIN_JWT_SECRET || 'fallback-secret-if-missing';
-
 export async function POST(req: Request) {
     try {
         const { email, password } = await req.json();
 
         const adminEmail = process.env.SUPER_ADMIN_EMAIL;
         const adminPassword = process.env.SUPER_ADMIN_PASSWORD;
+        const jwtSecret = process.env.SUPER_ADMIN_JWT_SECRET;
 
-        if (!adminEmail || !adminPassword) {
+        const missing = [
+            !adminEmail && 'SUPER_ADMIN_EMAIL',
+            !adminPassword && 'SUPER_ADMIN_PASSWORD',
+            !jwtSecret && 'SUPER_ADMIN_JWT_SECRET',
+        ].filter(Boolean);
+
+        if (missing.length > 0) {
             return NextResponse.json(
-                { message: 'Admin credentials not configured on server' },
+                { message: `Missing env vars on server: ${missing.join(', ')}` },
                 { status: 500 }
             );
         }
@@ -31,7 +36,7 @@ export async function POST(req: Request) {
                 .setExpirationTime(exp)
                 .setIssuedAt(iat)
                 .setNotBefore(iat)
-                .sign(new TextEncoder().encode(JWT_SECRET));
+                .sign(new TextEncoder().encode(jwtSecret));
 
             // Build response and set HTTP-only cookie
             const response = NextResponse.json({ success: true, message: 'Authenticated successfully' });
