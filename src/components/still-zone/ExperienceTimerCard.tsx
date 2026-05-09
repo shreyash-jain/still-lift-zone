@@ -19,10 +19,19 @@ interface ExperienceTimerCardProps {
   /** Dynamic segments for multi-part sessions (admin-defined) */
   segments?: Segment[];
   audioSrc?: string;
+  /** Loop the main audio for the duration of the timer */
+  audioLoop?: boolean;
   backgroundAudioSrc?: string;
+  /** When to start background audio: with main audio, or after it ends */
+  backgroundAudioMode?: 'with' | 'after';
   completionAudioSrc?: string;
   /** Beep/transition sound between segments (admin-configurable) */
   beepAudioSrc?: string;
+  /** Per-track volume 0–100 set by superadmin. undefined → sensible defaults. */
+  audioVolume?: number;
+  backgroundAudioVolume?: number;
+  completionAudioVolume?: number;
+  beepAudioVolume?: number;
   /** Legacy combo fields */
   comboSecondMessage?: string;
   comboFirstAudioSrc?: string;
@@ -74,9 +83,15 @@ export default function ExperienceTimerCard({
   segments,
   comboSecondMessage,
   audioSrc,
+  audioLoop = false,
   backgroundAudioSrc,
+  backgroundAudioMode = 'after',
   completionAudioSrc,
   beepAudioSrc,
+  audioVolume,
+  backgroundAudioVolume,
+  completionAudioVolume,
+  beepAudioVolume,
   comboFirstAudioSrc,
   comboSecondAudioSrc,
   onTryAnother,
@@ -93,6 +108,36 @@ export default function ExperienceTimerCard({
   const beepAudioRef = useRef<HTMLAudioElement | null>(null);
   const bgAudioRef = useRef<HTMLAudioElement | null>(null);
   const sessionAudioRef = useRef<HTMLAudioElement | null>(null);
+  const loopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const awaitingLoopRef = useRef(false);
+  const isPausedRef = useRef(false);
+
+  // Gap (ms) between loop iterations of the main audio
+  const LOOP_GAP_MS = 2000;
+
+  // Clamp 0–100 admin volume → 0..1 audio.volume; undefined → fallback
+  const clampVolume = (raw: number | undefined, fallback: number): number => {
+    const v = typeof raw === 'number' ? raw : fallback;
+    return Math.max(0, Math.min(1, v / 100));
+  };
+  const mainVol = clampVolume(audioVolume, 80);
+  const bgVol = clampVolume(backgroundAudioVolume, 40);
+  const completionVol = clampVolume(completionAudioVolume, 80);
+  const beepVol = clampVolume(beepAudioVolume, 80);
+
+  // Apply live volume changes to currently-playing audio elements
+  useEffect(() => {
+    if (sessionAudioRef.current) sessionAudioRef.current.volume = mainVol;
+  }, [mainVol]);
+  useEffect(() => {
+    if (bgAudioRef.current) bgAudioRef.current.volume = bgVol;
+  }, [bgVol]);
+  useEffect(() => {
+    if (bellAudioRef.current) bellAudioRef.current.volume = completionVol;
+  }, [completionVol]);
+  useEffect(() => {
+    if (beepAudioRef.current) beepAudioRef.current.volume = beepVol;
+  }, [beepVol]);
 
   // ── Build segment boundaries from dynamic segments or legacy combo ──
   const resolvedSegments: Segment[] = useMemo(() => {
@@ -139,15 +184,32 @@ export default function ExperienceTimerCard({
   // ── Play session audio helper ──────────────────────────────────────────────
   const playSessionAudio = useCallback((src?: string) => {
     if (!src) return;
+    // Cancel any pending loop replay before starting fresh audio
+    if (loopTimeoutRef.current) {
+      clearTimeout(loopTimeoutRef.current);
+      loopTimeoutRef.current = null;
+    }
+    awaitingLoopRef.current = false;
     if (sessionAudioRef.current) {
       sessionAudioRef.current.pause();
       sessionAudioRef.current.src = src;
       sessionAudioRef.current.currentTime = 0;
+      // We handle looping manually with a gap, so disable native loop
+      sessionAudioRef.current.loop = false;
+      sessionAudioRef.current.volume = mainVol;
       sessionAudioRef.current.play().catch(() => {});
     }
-  }, []);
+  }, [mainVol]);
+
+  // If audio loops forever, "after" mode would never trigger — so play bg together with main.
+  const playBgWithMain = backgroundAudioMode === 'with' || (!!audioLoop && !!backgroundAudioSrc);
 
   const stopSessionAudio = useCallback(() => {
+    if (loopTimeoutRef.current) {
+      clearTimeout(loopTimeoutRef.current);
+      loopTimeoutRef.current = null;
+    }
+    awaitingLoopRef.current = false;
     if (sessionAudioRef.current) {
       sessionAudioRef.current.pause();
       sessionAudioRef.current.currentTime = 0;
@@ -159,10 +221,10 @@ export default function ExperienceTimerCard({
     if (!backgroundAudioSrc || !bgAudioRef.current) return;
     bgAudioRef.current.src = backgroundAudioSrc;
     bgAudioRef.current.loop = true;
-    bgAudioRef.current.volume = 0.4; // softer than main audio
+    bgAudioRef.current.volume = bgVol;
     bgAudioRef.current.currentTime = 0;
     bgAudioRef.current.play().catch(() => {});
-  }, [backgroundAudioSrc]);
+  }, [backgroundAudioSrc, bgVol]);
 
   const stopBgAudio = useCallback(() => {
     if (bgAudioRef.current) {
@@ -181,9 +243,13 @@ export default function ExperienceTimerCard({
     stopBgAudio();
     // Play first segment's audio
     const firstAudio = resolvedSegments[0]?.audioUrl;
-    setTimeout(() => playSessionAudio(firstAudio), 100);
+    setTimeout(() => {
+      playSessionAudio(firstAudio);
+      // Start background audio together with main if requested
+      if (playBgWithMain) startBgAudio();
+    }, 100);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [message]);
+  }, [message, playBgWithMain]);
 
   // ── Auto-start on mount ───────────────────────────────────────────────────
   const hasStartedRef = useRef(false);
@@ -196,10 +262,49 @@ export default function ExperienceTimerCard({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Start background audio when main audio ends ───────────────────────────
+  // ── Keep paused state in a ref for async timeout callbacks ────────────────
+  useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
+
+  // ── Manual loop with 2-sec gap when audioLoop is true ─────────────────────
   useEffect(() => {
     const audio = sessionAudioRef.current;
-    if (!audio || !backgroundAudioSrc) return;
+    if (!audio || !audioLoop) return;
+
+    const handleEndedForLoop = () => {
+      if (phase !== 'playing') return;
+      if (loopTimeoutRef.current) clearTimeout(loopTimeoutRef.current);
+      // If paused right when the audio ends, remember to loop on resume
+      if (isPausedRef.current) {
+        awaitingLoopRef.current = true;
+        return;
+      }
+      loopTimeoutRef.current = setTimeout(() => {
+        loopTimeoutRef.current = null;
+        if (isPausedRef.current) {
+          awaitingLoopRef.current = true;
+          return;
+        }
+        if (sessionAudioRef.current) {
+          sessionAudioRef.current.currentTime = 0;
+          sessionAudioRef.current.play().catch(() => {});
+        }
+      }, LOOP_GAP_MS);
+    };
+
+    audio.addEventListener('ended', handleEndedForLoop);
+    return () => {
+      audio.removeEventListener('ended', handleEndedForLoop);
+      if (loopTimeoutRef.current) {
+        clearTimeout(loopTimeoutRef.current);
+        loopTimeoutRef.current = null;
+      }
+    };
+  }, [audioLoop, phase]);
+
+  // ── Start background audio when main audio ends ('after' mode only) ───────
+  useEffect(() => {
+    const audio = sessionAudioRef.current;
+    if (!audio || !backgroundAudioSrc || playBgWithMain) return;
 
     const handleMainEnded = () => {
       // Main audio finished — start looping background audio
@@ -210,7 +315,7 @@ export default function ExperienceTimerCard({
 
     audio.addEventListener('ended', handleMainEnded);
     return () => audio.removeEventListener('ended', handleMainEnded);
-  }, [backgroundAudioSrc, phase, isPaused, startBgAudio]);
+  }, [backgroundAudioSrc, phase, isPaused, startBgAudio, playBgWithMain]);
 
   // ── Play audio when audioSrc arrives (async content fetch) ────────────────
   useEffect(() => {
@@ -244,12 +349,14 @@ export default function ExperienceTimerCard({
 
     // Seamless transition: swap message + audio, play beep overlay
     stopSessionAudio();
-    stopBgAudio();
+    // Keep bg playing across segments when it's playing together with main; otherwise reset it
+    if (!playBgWithMain) stopBgAudio();
 
     // Play beep as overlay (doesn't pause anything)
     if (beepAudioRef.current) {
       if (beepAudioSrc) beepAudioRef.current.src = beepAudioSrc;
       beepAudioRef.current.currentTime = 0;
+      beepAudioRef.current.volume = beepVol;
       beepAudioRef.current.play().catch(() => {});
     }
 
@@ -275,10 +382,11 @@ export default function ExperienceTimerCard({
       }
       if (bellAudioRef.current) {
         bellAudioRef.current.currentTime = 0;
+        bellAudioRef.current.volume = completionVol;
         bellAudioRef.current.play().catch(() => {});
       }
     }
-  }, [elapsed, totalDuration, phase, stopBgAudio, completionAudioSrc]);
+  }, [elapsed, totalDuration, phase, stopBgAudio, stopSessionAudio, completionAudioSrc, completionVol]);
 
   // ── Pause / Resume ────────────────────────────────────────────────────────
   const togglePause = () => {
@@ -286,10 +394,22 @@ export default function ExperienceTimerCard({
     setIsPaused((prev) => {
       if (prev) {
         // Resuming
-        sessionAudioRef.current?.play().catch(() => {});
+        if (audioLoop && awaitingLoopRef.current && sessionAudioRef.current) {
+          // We were paused during the loop gap — replay main audio from the start
+          awaitingLoopRef.current = false;
+          sessionAudioRef.current.currentTime = 0;
+          sessionAudioRef.current.play().catch(() => {});
+        } else {
+          sessionAudioRef.current?.play().catch(() => {});
+        }
         bgAudioRef.current?.play().catch(() => {});
       } else {
-        // Pausing
+        // Pausing — cancel any pending loop replay so it doesn't fire while paused
+        if (loopTimeoutRef.current) {
+          clearTimeout(loopTimeoutRef.current);
+          loopTimeoutRef.current = null;
+          awaitingLoopRef.current = true;
+        }
         sessionAudioRef.current?.pause();
         bgAudioRef.current?.pause();
       }

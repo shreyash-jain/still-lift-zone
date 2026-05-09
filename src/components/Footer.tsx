@@ -4,7 +4,7 @@ export default function Footer() {
       <div className="footer-content">
         <div className="footer-card support-card">
           <p className="support-text">Want personalized coping tools?</p>
-          <a href="#" className="stillzone-btn">Visit StillZone</a>
+          <a href="/still-zone/login?returnUrl=%2Fstill-zone" className="stillzone-btn">Visit StillZone</a>
         </div>
         
         <div className="emergency-card">

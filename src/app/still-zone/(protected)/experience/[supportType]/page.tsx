@@ -47,9 +47,15 @@ export default function StillZoneExperiencePage() {
   const segments = dynamicContent?.segments;
   const comboSecondMessage = dynamicContent?.comboSecondMessage;
   const audioSrc = dynamicContent?.audioSrc;
+  const audioLoop = dynamicContent?.audioLoop ?? false;
   const backgroundAudioSrc = dynamicContent?.backgroundAudioSrc;
+  const backgroundAudioMode = dynamicContent?.backgroundAudioMode || 'after';
   const completionAudioSrc = dynamicContent?.completionAudioSrc;
   const beepAudioSrc = dynamicContent?.beepAudioSrc;
+  const audioVolume = dynamicContent?.audioVolume;
+  const backgroundAudioVolume = dynamicContent?.backgroundAudioVolume;
+  const completionAudioVolume = dynamicContent?.completionAudioVolume;
+  const beepAudioVolume = dynamicContent?.beepAudioVolume;
   const comboFirstAudioSrc = dynamicContent?.comboFirstAudioSrc;
   const comboSecondAudioSrc = dynamicContent?.comboSecondAudioSrc;
 
@@ -149,8 +155,14 @@ export default function StillZoneExperiencePage() {
           beepAudioSrc={beepAudioSrc}
           comboSecondMessage={comboSecondMessage}
           audioSrc={audioSrc}
+          audioLoop={audioLoop}
           backgroundAudioSrc={backgroundAudioSrc}
+          backgroundAudioMode={backgroundAudioMode}
           completionAudioSrc={completionAudioSrc}
+          audioVolume={audioVolume}
+          backgroundAudioVolume={backgroundAudioVolume}
+          completionAudioVolume={completionAudioVolume}
+          beepAudioVolume={beepAudioVolume}
           comboFirstAudioSrc={comboFirstAudioSrc}
           comboSecondAudioSrc={comboSecondAudioSrc}
           onTryAnother={handleTryAnother}

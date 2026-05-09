@@ -1,13 +1,15 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
     Plus, Pencil, Trash2, Check, X, Loader2, AlertCircle,
-    ChevronDown, ToggleLeft, ToggleRight, Volume2, VolumeX, Upload, FileText, Database
+    ChevronDown, ToggleLeft, ToggleRight, Volume2, VolumeX, Upload, FileText, Database, Eye
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MOOD_OPTIONS, CONTEXT_OPTIONS, TIME_OPTIONS, SUPPORT_OPTIONS } from '@/lib/still-zone-config';
+import ExperienceTimerCard from '@/components/still-zone/ExperienceTimerCard';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface ContentEntry {
@@ -24,6 +26,12 @@ interface ContentEntry {
     background_audio_url: string | null;
     completion_audio_url: string | null;
     beep_audio_url: string | null;
+    audio_volume: number | null;
+    background_audio_volume: number | null;
+    completion_audio_volume: number | null;
+    beep_audio_volume: number | null;
+    audio_loop: boolean;
+    background_audio_mode: 'with' | 'after';
     is_combo: boolean;
     segments: { duration: number; message: string; audio_url?: string }[] | null;
     combo_second_message: string | null;
@@ -61,6 +69,12 @@ const emptyForm = {
     background_audio_url: '',
     completion_audio_url: '',
     beep_audio_url: '',
+    audio_volume: 80,
+    background_audio_volume: 40,
+    completion_audio_volume: 80,
+    beep_audio_volume: 80,
+    audio_loop: false,
+    background_audio_mode: 'after' as 'with' | 'after',
     is_combo: false,
     segments: '[]',
     combo_second_message: '',
@@ -113,9 +127,10 @@ function InputField({ label, value, onChange, placeholder, type = 'text' }: {
 }
 
 // ─── Audio upload button ──────────────────────────────────────────────────────
-function AudioUploadField({ label, value, onChange, pathPrefix, playingUrl, onPlay }: {
+function AudioUploadField({ label, value, onChange, pathPrefix, playingUrl, onPlay, volume, onVolumeChange }: {
     label: string; value: string; onChange: (url: string) => void; pathPrefix: string;
-    playingUrl: string | null; onPlay: (url: string) => void;
+    playingUrl: string | null; onPlay: (url: string, volume?: number) => void;
+    volume?: number; onVolumeChange?: (v: number) => void;
 }) {
     const inputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
@@ -175,7 +190,7 @@ function AudioUploadField({ label, value, onChange, pathPrefix, playingUrl, onPl
                 {value && (
                     <button
                         type="button"
-                        onClick={() => onPlay(value)}
+                        onClick={() => onPlay(value, volume)}
                         className={`p-2 rounded-lg transition-colors ${isPlaying ? 'bg-teal-100 dark:bg-teal-900/30 text-teal-700' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-teal-600'}`}
                         title={isPlaying ? 'Stop audio' : 'Preview audio'}
                     >
@@ -183,6 +198,24 @@ function AudioUploadField({ label, value, onChange, pathPrefix, playingUrl, onPl
                     </button>
                 )}
             </div>
+            {value && onVolumeChange && (
+                <div className="flex items-center gap-3 px-1 pt-1">
+                    <Volume2 className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    <input
+                        type="range"
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={volume ?? 80}
+                        onChange={e => onVolumeChange(Number(e.target.value))}
+                        className="flex-1 h-1 accent-teal-500"
+                        aria-label={`${label} volume`}
+                    />
+                    <span className="text-[11px] tabular-nums text-slate-500 w-10 text-right">
+                        {volume ?? 80}%
+                    </span>
+                </div>
+            )}
         </div>
     );
 }
@@ -203,6 +236,7 @@ export default function ContentManagementPage() {
     const [editingId, setEditingId] = useState<string | null>(null);
     const [form, setForm] = useState<FormState>({ ...emptyForm });
     const [deletingId, setDeletingId] = useState<string | null>(null);
+    const [showPreview, setShowPreview] = useState(false);
 
     // Filters
     const [filterMood, setFilterMood] = useState('');
@@ -214,7 +248,7 @@ export default function ContentManagementPage() {
     const previewAudioRef = useRef<HTMLAudioElement | null>(null);
     const [playingUrl, setPlayingUrl] = useState<string | null>(null);
 
-    const togglePreview = (url: string) => {
+    const togglePreview = (url: string, volume?: number) => {
         const audio = previewAudioRef.current;
         if (!audio) return;
 
@@ -228,9 +262,18 @@ export default function ContentManagementPage() {
             audio.pause();
             audio.src = url;
             audio.currentTime = 0;
+            const v = typeof volume === 'number' ? Math.max(0, Math.min(100, volume)) : 80;
+            audio.volume = v / 100;
             audio.play().catch(() => {});
             setPlayingUrl(url);
         }
+    };
+
+    // Keep preview volume live while a slider is dragged during playback
+    const updatePreviewVolume = (url: string, volume: number) => {
+        const audio = previewAudioRef.current;
+        if (!audio || playingUrl !== url) return;
+        audio.volume = Math.max(0, Math.min(100, volume)) / 100;
     };
 
     // Clear playingUrl when audio ends naturally
@@ -312,6 +355,12 @@ export default function ContentManagementPage() {
             background_audio_url: entry.background_audio_url || '',
             completion_audio_url: entry.completion_audio_url || '',
             beep_audio_url: entry.beep_audio_url || '',
+            audio_volume: entry.audio_volume ?? 80,
+            background_audio_volume: entry.background_audio_volume ?? 40,
+            completion_audio_volume: entry.completion_audio_volume ?? 80,
+            beep_audio_volume: entry.beep_audio_volume ?? 80,
+            audio_loop: entry.audio_loop ?? false,
+            background_audio_mode: entry.background_audio_mode === 'with' ? 'with' : 'after',
             segments: JSON.stringify(entry.segments || []),
             is_combo: entry.is_combo,
             combo_second_message: entry.combo_second_message || '',
@@ -336,7 +385,6 @@ export default function ContentManagementPage() {
         if (!form.context) missing.push('Context');
         if (!form.support_type) missing.push('Support Type');
         if (!form.time_key) missing.push('Time');
-        if (!form.message.trim()) missing.push('Message');
         if (missing.length > 0) {
             setError(`${missing.join(', ')} ${missing.length === 1 ? 'is' : 'are'} required.`);
             return;
@@ -351,12 +399,18 @@ export default function ContentManagementPage() {
                 time_key: form.time_key,
                 action_type: form.action_type,
                 heading: form.heading.trim() || null,
-                message: form.message.trim(),
+                message: form.message.trim() || null,
                 display_time: Number(form.display_time) || DISPLAY_TIMES[form.time_key] || 60,
                 audio_url: form.audio_url || null,
                 background_audio_url: form.background_audio_url || null,
                 completion_audio_url: form.completion_audio_url || null,
                 beep_audio_url: form.beep_audio_url || null,
+                audio_volume: Number(form.audio_volume) || 0,
+                background_audio_volume: Number(form.background_audio_volume) || 0,
+                completion_audio_volume: Number(form.completion_audio_volume) || 0,
+                beep_audio_volume: Number(form.beep_audio_volume) || 0,
+                audio_loop: !!form.audio_loop,
+                background_audio_mode: form.background_audio_mode === 'with' ? 'with' : 'after',
                 segments: form.is_combo ? JSON.parse(form.segments || '[]') : null,
                 is_combo: form.is_combo,
                 combo_second_message: form.is_combo ? form.combo_second_message.trim() || null : null,
@@ -436,7 +490,7 @@ export default function ContentManagementPage() {
     const audioPathPrefix = form.mood && form.support_type ? `${form.mood}/${form.support_type}` : 'general';
 
     return (
-        <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-24 pb-12 space-y-6 w-full">
+        <main className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-8 lg:pt-10 pb-12 space-y-6 w-full">
             {/* Header */}
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
@@ -519,7 +573,7 @@ export default function ContentManagementPage() {
 
                         {/* Message */}
                         <div className="space-y-1">
-                            <label className="text-xs font-medium text-slate-500">Message *</label>
+                            <label className="text-xs font-medium text-slate-500">Message <span className="text-slate-400 font-normal">(optional)</span></label>
                             <textarea
                                 value={form.message}
                                 onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
@@ -530,9 +584,87 @@ export default function ContentManagementPage() {
                         </div>
 
                         {/* Audio */}
-                        <AudioUploadField label="Main Audio (voice guidance)" value={form.audio_url} onChange={v => setForm(f => ({ ...f, audio_url: v }))} pathPrefix={audioPathPrefix} playingUrl={playingUrl} onPlay={togglePreview} />
-                        <AudioUploadField label="Background Audio (loops after main audio ends)" value={form.background_audio_url} onChange={v => setForm(f => ({ ...f, background_audio_url: v }))} pathPrefix={`${audioPathPrefix}/bg`} playingUrl={playingUrl} onPlay={togglePreview} />
-                        <AudioUploadField label="Completion Sound (plays when timer finishes, optional — uses global default if empty)" value={form.completion_audio_url} onChange={v => setForm(f => ({ ...f, completion_audio_url: v }))} pathPrefix={`${audioPathPrefix}/completion`} playingUrl={playingUrl} onPlay={togglePreview} />
+                        <AudioUploadField
+                            label="Main Audio (voice guidance)"
+                            value={form.audio_url}
+                            onChange={v => setForm(f => ({ ...f, audio_url: v }))}
+                            pathPrefix={audioPathPrefix}
+                            playingUrl={playingUrl}
+                            onPlay={togglePreview}
+                            volume={form.audio_volume}
+                            onVolumeChange={v => {
+                                setForm(f => ({ ...f, audio_volume: v }));
+                                if (form.audio_url) updatePreviewVolume(form.audio_url, v);
+                            }}
+                        />
+
+                        {/* Loop toggle for main audio */}
+                        {form.audio_url && (
+                            <button
+                                type="button"
+                                onClick={() => setForm(f => ({ ...f, audio_loop: !f.audio_loop }))}
+                                className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300"
+                            >
+                                {form.audio_loop ? <ToggleRight className="w-6 h-6 text-teal-500" /> : <ToggleLeft className="w-6 h-6 text-slate-400" />}
+                                Loop main audio {form.audio_loop ? '(repeats until timer ends)' : '(plays once)'}
+                            </button>
+                        )}
+
+                        <AudioUploadField
+                            label="Background Audio"
+                            value={form.background_audio_url}
+                            onChange={v => setForm(f => ({ ...f, background_audio_url: v }))}
+                            pathPrefix={`${audioPathPrefix}/bg`}
+                            playingUrl={playingUrl}
+                            onPlay={togglePreview}
+                            volume={form.background_audio_volume}
+                            onVolumeChange={v => {
+                                setForm(f => ({ ...f, background_audio_volume: v }));
+                                if (form.background_audio_url) updatePreviewVolume(form.background_audio_url, v);
+                            }}
+                        />
+
+                        {/* Background music playback mode */}
+                        {form.background_audio_url && (
+                            <div className="space-y-2 p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50/60 dark:bg-slate-900/40">
+                                <p className="text-xs font-medium text-slate-500">When should background audio play?</p>
+                                <div className="flex flex-wrap gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setForm(f => ({ ...f, background_audio_mode: 'after' }))}
+                                        className={`text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${form.background_audio_mode !== 'with' ? 'bg-teal-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-300'}`}
+                                    >
+                                        After main audio ends
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setForm(f => ({ ...f, background_audio_mode: 'with' }))}
+                                        className={`text-xs font-medium px-3 py-1.5 rounded-full transition-colors ${form.background_audio_mode === 'with' ? 'bg-teal-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-300'}`}
+                                    >
+                                        Together with main audio
+                                    </button>
+                                </div>
+                                {form.audio_loop && form.background_audio_mode !== 'with' && (
+                                    <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                                        Note: main audio is set to loop, so background will play together with it.
+                                    </p>
+                                )}
+                            </div>
+                        )}
+
+                        <AudioUploadField
+                            label="Completion Bell (plays when timer finishes, optional — uses global default if empty)"
+                            value={form.completion_audio_url}
+                            onChange={v => setForm(f => ({ ...f, completion_audio_url: v }))}
+                            pathPrefix={`${audioPathPrefix}/completion`}
+                            playingUrl={playingUrl}
+                            onPlay={togglePreview}
+                            volume={form.completion_audio_volume}
+                            onVolumeChange={v => {
+                                setForm(f => ({ ...f, completion_audio_volume: v }));
+                                if (form.completion_audio_url) updatePreviewVolume(form.completion_audio_url, v);
+                            }}
+                        />
 
                         {/* Multi-segment builder */}
                         {form.is_combo && (() => {
@@ -603,7 +735,19 @@ export default function ContentManagementPage() {
                                     )}
 
                                     {/* Beep/transition sound */}
-                                    <AudioUploadField label="Transition Sound (beep between segments)" value={form.beep_audio_url} onChange={v => setForm(f => ({ ...f, beep_audio_url: v }))} pathPrefix={`${audioPathPrefix}/beep`} playingUrl={playingUrl} onPlay={togglePreview} />
+                                    <AudioUploadField
+                                        label="Transition Bell (beep between segments)"
+                                        value={form.beep_audio_url}
+                                        onChange={v => setForm(f => ({ ...f, beep_audio_url: v }))}
+                                        pathPrefix={`${audioPathPrefix}/beep`}
+                                        playingUrl={playingUrl}
+                                        onPlay={togglePreview}
+                                        volume={form.beep_audio_volume}
+                                        onVolumeChange={v => {
+                                            setForm(f => ({ ...f, beep_audio_volume: v }));
+                                            if (form.beep_audio_url) updatePreviewVolume(form.beep_audio_url, v);
+                                        }}
+                                    />
 
                                     <p className="text-[10px] text-amber-600 dark:text-amber-400">
                                         Total duration: {segs.reduce((s, seg) => s + (Number(seg.duration) || 0), 0)}s = {Math.floor(segs.reduce((s, seg) => s + (Number(seg.duration) || 0), 0) / 60)}m {segs.reduce((s, seg) => s + (Number(seg.duration) || 0), 0) % 60}s
@@ -619,10 +763,26 @@ export default function ContentManagementPage() {
                         </button>
 
                         {/* Actions */}
-                        <div className="flex items-center gap-2 pt-1">
+                        <div className="flex items-center gap-2 pt-1 flex-wrap">
                             <Button onClick={handleSave} disabled={saving} className="bg-teal-600 hover:bg-teal-700 text-white gap-2">
                                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
                                 {editingId ? 'Save Changes' : 'Create'}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    // Stop the inline preview audio before opening the modal
+                                    if (previewAudioRef.current) {
+                                        previewAudioRef.current.pause();
+                                        previewAudioRef.current.currentTime = 0;
+                                    }
+                                    setPlayingUrl(null);
+                                    setShowPreview(true);
+                                }}
+                                disabled={saving}
+                                className="gap-2"
+                            >
+                                <Eye className="w-4 h-4" /> Preview
                             </Button>
                             <Button variant="ghost" onClick={closeForm} disabled={saving}>Cancel</Button>
                         </div>
@@ -757,6 +917,103 @@ export default function ContentManagementPage() {
                     )}
                 </>
             )}
+
+            {/* ── Preview Modal ─────────────────────────────────────── */}
+            {showPreview && (() => {
+                const previewSegments = (() => {
+                    if (!form.is_combo) return undefined;
+                    try {
+                        const segs = JSON.parse(form.segments || '[]') as { duration: number; message: string; audio_url?: string }[];
+                        return segs.map(s => ({ duration: s.duration, message: s.message, audioUrl: s.audio_url }));
+                    } catch { return undefined; }
+                })();
+
+                const previewDuration = (() => {
+                    const t = Number(form.display_time) || 0;
+                    if (t > 0) return t;
+                    if (previewSegments && previewSegments.length > 0) {
+                        return previewSegments.reduce((sum, s) => sum + (Number(s.duration) || 0), 0);
+                    }
+                    return 60;
+                })();
+
+                if (typeof window === 'undefined') return null;
+
+                return createPortal(
+                    <div
+                        className="fixed inset-0 z-[1000] overflow-y-auto"
+                        style={{
+                            background: 'rgba(15, 23, 42, 0.28)',
+                            backdropFilter: 'blur(8px) saturate(140%)',
+                            WebkitBackdropFilter: 'blur(8px) saturate(140%)',
+                        }}
+                        onClick={() => setShowPreview(false)}
+                    >
+                        <div className="min-h-full flex items-center justify-center p-4 sm:p-6">
+                        <div
+                            className="relative w-full max-w-[520px] flex flex-col items-center"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            {/* Close button — floats top-right of the modal */}
+                            <button
+                                onClick={() => setShowPreview(false)}
+                                className="absolute -top-3 -right-3 z-20 w-9 h-9 rounded-full bg-white/95 hover:bg-white shadow-lg ring-1 ring-slate-200/80 backdrop-blur flex items-center justify-center text-slate-600 hover:text-slate-900 transition-colors"
+                                aria-label="Close preview"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+
+                            {/* Glassmorphic modal card */}
+                            <div
+                                className="relative w-full overflow-hidden rounded-[28px] ring-1 ring-white/40"
+                                style={{
+                                    background: 'linear-gradient(145deg, rgba(255,255,255,0.78) 0%, rgba(240,244,248,0.72) 50%, rgba(245,243,255,0.78) 100%)',
+                                    backdropFilter: 'blur(18px) saturate(160%)',
+                                    WebkitBackdropFilter: 'blur(18px) saturate(160%)',
+                                    boxShadow: '0 30px 80px -20px rgba(15, 23, 42, 0.35), 0 0 0 1px rgba(255,255,255,0.6) inset',
+                                }}
+                            >
+                                <div className="relative">
+                                    <div className="flex items-center justify-center py-8 px-3 sm:py-10">
+                                        <ExperienceTimerCard
+                                            key={`preview-${form.audio_url}-${form.background_audio_url}-${form.audio_loop}-${form.background_audio_mode}-${form.audio_volume}-${form.background_audio_volume}-${form.completion_audio_volume}-${form.beep_audio_volume}-${form.message}`}
+                                            message={form.message || 'Your message will appear here.'}
+                                            action={form.heading || ''}
+                                            actionType={form.action_type}
+                                            totalDuration={previewDuration}
+                                            isCombo={form.is_combo}
+                                            segments={previewSegments}
+                                            audioSrc={form.audio_url || undefined}
+                                            audioLoop={!!form.audio_loop}
+                                            backgroundAudioSrc={form.background_audio_url || undefined}
+                                            backgroundAudioMode={form.background_audio_mode === 'with' ? 'with' : 'after'}
+                                            completionAudioSrc={form.completion_audio_url || undefined}
+                                            beepAudioSrc={form.beep_audio_url || undefined}
+                                            audioVolume={form.audio_volume}
+                                            backgroundAudioVolume={form.background_audio_volume}
+                                            completionAudioVolume={form.completion_audio_volume}
+                                            beepAudioVolume={form.beep_audio_volume}
+                                            comboSecondMessage={form.combo_second_message || undefined}
+                                            comboFirstAudioSrc={form.combo_first_audio_url || undefined}
+                                            comboSecondAudioSrc={form.combo_second_audio_url || undefined}
+                                            onTryAnother={() => setShowPreview(false)}
+                                            onStartOver={() => setShowPreview(false)}
+                                            onComplete={() => setShowPreview(false)}
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Bottom hint */}
+                            <p className="mt-4 text-[11px] text-slate-500 text-center">
+                                Tap outside or press the close button to exit preview
+                            </p>
+                        </div>
+                        </div>
+                    </div>,
+                    document.body
+                );
+            })()}
         </main>
     );
 }

@@ -1,0 +1,44 @@
+/*
+ * Scoped reset for the /landing route.
+ * Neutralises rules from globals.css that target tag selectors
+ * (body, main, .light-mode, .dark-mode) so the landing page
+ * renders only with its Tailwind classes.
+ */
+
+[data-landing-root] {
+    animation: none !important;
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+}
+
+/* Cancel the global `main { padding-top: 92px; animation: fadeIn; ... }`
+   when the landing root sits inside a flex-column body. */
+body:has([data-landing-root]) {
+    background: #f6f9f9 !important;
+    display: block !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 1.5;
+    letter-spacing: normal !important;
+    color: #0f2326 !important;
+}
+
+body:has([data-landing-root]).dark-mode,
+body:has([data-landing-root]).light-mode {
+    background: #f6f9f9 !important;
+    color: #0f2326 !important;
+}
+
+html:has([data-landing-root]) {
+    background: #f6f9f9;
+}
+
+/* Reset stray global animations on the landing tree */
+[data-landing-root] *,
+[data-landing-root] *::before,
+[data-landing-root] *::after {
+    animation-name: revert-layer;
+}
+
+/* Re-enable framer-motion controlled animations (they use inline styles, not animation rules). */

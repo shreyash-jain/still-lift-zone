@@ -23,6 +23,12 @@ interface DbContentRow {
   background_audio_url: string | null;
   completion_audio_url: string | null;
   beep_audio_url: string | null;
+  audio_volume: number | null;
+  background_audio_volume: number | null;
+  completion_audio_volume: number | null;
+  beep_audio_volume: number | null;
+  audio_loop: boolean | null;
+  background_audio_mode: 'with' | 'after' | null;
   is_combo: boolean;
   segments: { duration: number; message: string; audio_url?: string }[] | null;
   combo_second_message: string | null;
@@ -41,9 +47,15 @@ function dbRowToMessage(row: DbContentRow): StillZoneContentMessage {
     displayTime: row.display_time,
     audioIndex: 0,
     audioSrc: row.audio_url || undefined,
+    audioLoop: row.audio_loop ?? false,
     backgroundAudioSrc: row.background_audio_url || undefined,
+    backgroundAudioMode: row.background_audio_mode === 'with' ? 'with' : 'after',
     completionAudioSrc: row.completion_audio_url || undefined,
     beepAudioSrc: row.beep_audio_url || undefined,
+    audioVolume: row.audio_volume ?? undefined,
+    backgroundAudioVolume: row.background_audio_volume ?? undefined,
+    completionAudioVolume: row.completion_audio_volume ?? undefined,
+    beepAudioVolume: row.beep_audio_volume ?? undefined,
     isCombo: row.is_combo,
     segments: row.segments || undefined,
     comboSecondMessage: row.combo_second_message || undefined,

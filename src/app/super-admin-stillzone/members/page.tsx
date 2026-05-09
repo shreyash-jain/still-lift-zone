@@ -351,7 +351,7 @@ export default function MembersPage() {
 
     return (
         <>
-            <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-24 pb-12 space-y-8 w-full">
+            <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-8 lg:pt-10 pb-12 space-y-8 w-full">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div className="space-y-1">
                         <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">

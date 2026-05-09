@@ -94,7 +94,7 @@ export default function SuperAdminDashboard() {
     }, []);
 
     return (
-        <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-24 pb-12 space-y-8 w-full">
+        <main className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 pt-8 lg:pt-10 pb-12 space-y-8 w-full">
             <div className="space-y-2">
                 <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
                     SuperAdmin Dashboard

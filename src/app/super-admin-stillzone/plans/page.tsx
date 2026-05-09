@@ -238,7 +238,7 @@ export default function PlansPage() {
     };
 
     return (
-        <main className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 pt-24 pb-12 space-y-6 w-full">
+        <main className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 pt-8 lg:pt-10 pb-12 space-y-6 w-full">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div>

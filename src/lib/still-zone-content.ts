@@ -15,9 +15,16 @@ export interface StillZoneContentMessage {
   displayTime: number;       // total duration in seconds
   audioIndex: number;        // legacy
   audioSrc?: string;         // for single-segment entries
+  audioLoop?: boolean;          // if true, main audio repeats until timer ends
   backgroundAudioSrc?: string;  // loops after voice audio ends
+  backgroundAudioMode?: 'with' | 'after'; // play with main audio or after it ends
   completionAudioSrc?: string;  // plays when timer finishes
   beepAudioSrc?: string;        // plays between segments
+  // Per-track volume (0–100). undefined falls back to defaults in the player.
+  audioVolume?: number;
+  backgroundAudioVolume?: number;
+  completionAudioVolume?: number;
+  beepAudioVolume?: number;
   // Multi-segment support (replaces hardcoded combo)
   isCombo?: boolean;
   segments?: ContentSegment[];  // dynamic segments defined by admin

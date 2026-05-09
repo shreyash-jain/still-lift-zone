@@ -13,10 +13,19 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
             mood, context, support_type, time_key, action_type,
             heading, message, display_time, audio_url,
             background_audio_url, completion_audio_url, beep_audio_url,
+            audio_volume, background_audio_volume,
+            completion_audio_volume, beep_audio_volume,
+            audio_loop, background_audio_mode,
             is_combo, segments, combo_second_message,
             combo_first_audio_url, combo_second_audio_url,
             is_active, sort_order,
         } = body;
+
+        const clampVol = (v: unknown, fallback: number) => {
+            const n = Number(v);
+            if (!Number.isFinite(n)) return fallback;
+            return Math.max(0, Math.min(100, Math.round(n)));
+        };
 
         const { data, error } = await supabase
             .from('still_zone_content')
@@ -27,12 +36,18 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
                 time_key,
                 action_type,
                 heading: heading || null,
-                message,
+                message: message ?? null,
                 display_time: Number(display_time) || 60,
                 audio_url: audio_url || null,
                 background_audio_url: background_audio_url || null,
                 completion_audio_url: completion_audio_url || null,
                 beep_audio_url: beep_audio_url || null,
+                audio_volume: clampVol(audio_volume, 80),
+                background_audio_volume: clampVol(background_audio_volume, 40),
+                completion_audio_volume: clampVol(completion_audio_volume, 80),
+                beep_audio_volume: clampVol(beep_audio_volume, 80),
+                audio_loop: audio_loop ?? false,
+                background_audio_mode: background_audio_mode === 'with' ? 'with' : 'after',
                 is_combo: is_combo ?? false,
                 segments: is_combo ? (segments || null) : null,
                 combo_second_message: combo_second_message || null,
