@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import logoStillLift from '@/../public/Logo stilllift new.svg';
@@ -133,16 +134,31 @@ const faqs = [
 ];
 
 export default function LandingPage() {
+    const [scrolled, setScrolled] = useState(false);
+
+    useEffect(() => {
+        const onScroll = () => setScrolled(window.scrollY > 8);
+        onScroll();
+        window.addEventListener('scroll', onScroll, { passive: true });
+        return () => window.removeEventListener('scroll', onScroll);
+    }, []);
+
     return (
         <div
             data-landing-root
-            className="relative min-h-screen overflow-hidden bg-[#f6f9f9] text-[#0f2326] selection:bg-[#88ADA8]/40 selection:text-[#003A40]"
+            className="relative min-h-screen overflow-hidden bg-[#f6f9f9] pt-16 text-[#0f2326] selection:bg-[#88ADA8]/40 selection:text-[#003A40] sm:pt-20"
         >
             {/* Ambient background gradients */}
             <BackgroundOrbs />
 
             {/* NAV */}
-            <header className="relative z-30">
+            <header
+                className={`fixed inset-x-0 top-0 z-50 transition-colors duration-300 ${
+                    scrolled
+                        ? 'border-b border-[#88ADA8]/20 bg-[#f6f9f9]/80 backdrop-blur-md shadow-[0_4px_20px_-12px_rgba(0,72,81,0.2)]'
+                        : 'border-b border-transparent bg-transparent'
+                }`}
+            >
                 <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-8 sm:py-4">
                     <Link href="/landing" className="flex items-center gap-2.5 group">
                         <LogoMark />
@@ -1077,7 +1093,7 @@ function HeroVisual() {
             <motion.div
                 animate={{ y: [0, -14, 0] }}
                 transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-                className="absolute left-2 top-4 z-10 hidden rounded-2xl border border-[#88ADA8]/40 bg-white/85 p-4 shadow-[0_20px_40px_-20px_rgba(0,72,81,0.3)] backdrop-blur-sm sm:block"
+                className="absolute left-2 top-16 z-10 hidden rounded-2xl border border-[#88ADA8]/40 bg-white/85 p-4 shadow-[0_20px_40px_-20px_rgba(0,72,81,0.3)] backdrop-blur-sm sm:block"
             >
                 <div className="flex items-center gap-3">
                     <div className="grid h-9 w-9 place-items-center rounded-lg bg-gradient-to-br from-[#629093] to-[#88ADA8] text-white">
