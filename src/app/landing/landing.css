@@ -7,8 +7,12 @@
 
 [data-landing-root] {
     animation: none !important;
-    padding-top: 0 !important;
     margin-top: 0 !important;
+}
+
+/* Offset anchor jumps so the fixed header doesn't cover the section top. */
+[data-landing-root] section[id] {
+    scroll-margin-top: 5rem;
 }
 
 /* Cancel the global `main { padding-top: 92px; animation: fadeIn; ... }`
@@ -32,6 +36,7 @@ body:has([data-landing-root]).light-mode {
 
 html:has([data-landing-root]) {
     background: #f6f9f9;
+    scroll-padding-top: 5rem;
 }
 
 /* Reset stray global animations on the landing tree */
