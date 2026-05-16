@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import logoStillLift from '@/../public/Logo stilllift new.svg';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     ArrowRight,
     Brain,
@@ -36,6 +36,8 @@ import {
     MessageCircleHeart,
     Infinity as InfinityIcon,
     Palette,
+    Menu,
+    X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -133,8 +135,17 @@ const faqs = [
     },
 ];
 
+const navLinks = [
+    { href: '#features', label: 'Features' },
+    { href: '#experiences', label: 'Still Lift & Zone' },
+    { href: '#still-zone', label: 'Still Zone' },
+    { href: '#premium', label: 'Premium', emphasis: true },
+    { href: '#faq', label: 'FAQ' },
+];
+
 export default function LandingPage() {
     const [scrolled, setScrolled] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
     useEffect(() => {
         const onScroll = () => setScrolled(window.scrollY > 8);
@@ -143,10 +154,21 @@ export default function LandingPage() {
         return () => window.removeEventListener('scroll', onScroll);
     }, []);
 
+    useEffect(() => {
+        if (mobileMenuOpen) {
+            document.body.style.overflow = 'hidden';
+        } else {
+            document.body.style.overflow = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+        };
+    }, [mobileMenuOpen]);
+
     return (
         <div
             data-landing-root
-            className="relative min-h-screen overflow-hidden bg-[#f6f9f9] pt-16 text-[#0f2326] selection:bg-[#88ADA8]/40 selection:text-[#003A40] sm:pt-20"
+            className="relative overflow-x-hidden bg-[#f6f9f9] pt-20 text-[#0f2326] selection:bg-[#88ADA8]/40 selection:text-[#003A40] sm:pt-24"
         >
             {/* Ambient background gradients */}
             <BackgroundOrbs />
@@ -159,32 +181,106 @@ export default function LandingPage() {
                         : 'border-b border-transparent bg-transparent'
                 }`}
             >
-                <nav className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-8 sm:py-4">
-                    <Link href="/landing" className="flex items-center gap-2.5 group">
-                        <LogoMark />
+                <nav className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-8 sm:py-4">
+                    <Link href="/landing" className="flex shrink-0 items-center gap-2 group">
+                        <LogoMark size={32} className="sm:h-10 sm:w-10" />
                         <span className="text-base font-semibold tracking-tight text-[#003A40] sm:text-lg">
                             Still Lift
                         </span>
                     </Link>
                     <div className="hidden items-center gap-8 md:flex">
-                        <a href="#features" className="text-sm text-[#2E5653] hover:text-[#003A40] transition-colors">Features</a>
-                        <a href="#experiences" className="text-sm text-[#2E5653] hover:text-[#003A40] transition-colors">Still Lift &amp; Zone</a>
-                        <a href="#still-zone" className="text-sm text-[#2E5653] hover:text-[#003A40] transition-colors">Still Zone</a>
-                        <a href="#premium" className="text-sm font-medium text-[#003A40] hover:text-[#00282E] transition-colors">Premium</a>
-                        <a href="#faq" className="text-sm text-[#2E5653] hover:text-[#003A40] transition-colors">FAQ</a>
+                        {navLinks.map((link) => (
+                            <a
+                                key={link.href}
+                                href={link.href}
+                                className={`text-sm transition-colors ${
+                                    link.emphasis
+                                        ? 'font-medium text-[#003A40] hover:text-[#00282E]'
+                                        : 'text-[#2E5653] hover:text-[#003A40]'
+                                }`}
+                            >
+                                {link.label}
+                            </a>
+                        ))}
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex shrink-0 items-center gap-2">
                         <Button
                             asChild
-                            className="bg-[#004851] text-white shadow-[0_8px_24px_-10px_rgba(0,72,81,0.6)] hover:bg-[#003A40]"
+                            className="hidden bg-[#004851] text-white shadow-[0_8px_24px_-10px_rgba(0,72,81,0.6)] hover:bg-[#003A40] md:inline-flex"
                         >
                             <a href={SIGNUP_URL} rel="noopener">
                                 Join Still Lift <ArrowRight className="ml-1 h-4 w-4" />
                             </a>
                         </Button>
+                        <button
+                            type="button"
+                            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+                            aria-expanded={mobileMenuOpen}
+                            onClick={() => setMobileMenuOpen((open) => !open)}
+                            className="grid h-10 w-10 place-items-center rounded-lg border border-[#88ADA8]/40 bg-white/80 text-[#003A40] backdrop-blur-sm transition-colors hover:bg-white md:hidden"
+                        >
+                            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                        </button>
                     </div>
                 </nav>
             </header>
+
+            {/* MOBILE MENU DRAWER */}
+            <AnimatePresence>
+                {mobileMenuOpen && (
+                    <motion.div
+                        key="mobile-menu"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="fixed inset-0 z-40 md:hidden"
+                    >
+                        <div
+                            className="absolute inset-0 bg-[#003A40]/30 backdrop-blur-sm"
+                            onClick={() => setMobileMenuOpen(false)}
+                        />
+                        <motion.div
+                            initial={{ y: -16, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: -16, opacity: 0 }}
+                            transition={{ duration: 0.25, ease: [0.25, 0.4, 0.25, 1] }}
+                            className="absolute inset-x-3 top-[4.5rem] rounded-2xl border border-[#88ADA8]/30 bg-white/95 p-4 shadow-[0_30px_60px_-30px_rgba(0,72,81,0.4)] backdrop-blur-md"
+                        >
+                            <nav className="flex flex-col">
+                                {navLinks.map((link) => (
+                                    <a
+                                        key={link.href}
+                                        href={link.href}
+                                        onClick={() => setMobileMenuOpen(false)}
+                                        className={`rounded-lg px-3 py-3 text-base transition-colors ${
+                                            link.emphasis
+                                                ? 'font-semibold text-[#003A40] hover:bg-[#e9f2f2]'
+                                                : 'text-[#2E5653] hover:bg-[#e9f2f2] hover:text-[#003A40]'
+                                        }`}
+                                    >
+                                        {link.label}
+                                    </a>
+                                ))}
+                                <div className="mt-2 border-t border-[#88ADA8]/25 pt-3">
+                                    <Button
+                                        asChild
+                                        className="w-full bg-[#004851] text-white hover:bg-[#003A40]"
+                                    >
+                                        <a
+                                            href={SIGNUP_URL}
+                                            rel="noopener"
+                                            onClick={() => setMobileMenuOpen(false)}
+                                        >
+                                            Join Still Lift <ArrowRight className="ml-1 h-4 w-4" />
+                                        </a>
+                                    </Button>
+                                </div>
+                            </nav>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* HERO */}
             <section className="relative z-20">
@@ -221,7 +317,7 @@ export default function LandingPage() {
                             <Button
                                 asChild
                                 size="lg"
-                                className="h-12 bg-[#004851] px-7 text-base text-white shadow-[0_10px_30px_-12px_rgba(0,72,81,0.7)] hover:bg-[#003A40]"
+                                className="h-12 w-full bg-[#004851] px-7 text-base text-white shadow-[0_10px_30px_-12px_rgba(0,72,81,0.7)] hover:bg-[#003A40] sm:w-auto"
                             >
                                 <a href={SIGNUP_URL} rel="noopener">
                                     Join Still Lift <ArrowRight className="ml-1 h-4 w-4" />
@@ -231,7 +327,7 @@ export default function LandingPage() {
                                 asChild
                                 size="lg"
                                 variant="outline"
-                                className="h-12 border-[#88ADA8]/50 bg-white/70 px-7 text-base text-[#003A40] backdrop-blur hover:bg-white"
+                                className="h-12 w-full border-[#88ADA8]/50 bg-white/70 px-7 text-base text-[#003A40] backdrop-blur hover:bg-white sm:w-auto"
                             >
                                 <a href={STILLZONE_URL} rel="noopener">
                                     <PlayCircle className="mr-1 h-4 w-4" />
@@ -278,7 +374,7 @@ export default function LandingPage() {
 
             {/* MARQUEE / SOCIAL PROOF STRIP */}
             <section className="relative z-20 border-y border-[#88ADA8]/20 bg-white/60 backdrop-blur-sm">
-                <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-around gap-x-10 gap-y-4 px-5 py-6 text-xs uppercase tracking-[0.18em] text-[#3F6D6A] sm:px-8">
+                <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-5 gap-y-3 px-5 py-6 text-[10px] uppercase tracking-[0.18em] text-[#3F6D6A] sm:justify-around sm:gap-x-10 sm:gap-y-4 sm:px-8 sm:text-xs">
                     <span>As featured for · Mindful Tech</span>
                     <span>· Wellness Daily</span>
                     <span>· The Calm Edit</span>
@@ -578,7 +674,7 @@ export default function LandingPage() {
                                 <Button
                                     asChild
                                     size="lg"
-                                    className="h-12 bg-[#003A40] px-7 text-base font-semibold text-white shadow-[0_10px_30px_-12px_rgba(0,72,81,0.7)] hover:bg-[#00282E]"
+                                    className="h-12 w-full bg-[#003A40] px-7 text-base font-semibold text-white shadow-[0_10px_30px_-12px_rgba(0,72,81,0.7)] hover:bg-[#00282E] sm:w-auto"
                                 >
                                     <a href={STILLZONE_URL} rel="noopener">
                                         <Crown className="mr-1 h-4 w-4 text-amber-300" />
@@ -589,7 +685,7 @@ export default function LandingPage() {
                                     asChild
                                     size="lg"
                                     variant="outline"
-                                    className="h-12 border-[#88ADA8]/60 bg-white/70 px-7 text-base text-[#003A40] backdrop-blur hover:bg-white"
+                                    className="h-12 w-full border-[#88ADA8]/60 bg-white/70 px-7 text-base text-[#003A40] backdrop-blur hover:bg-white sm:w-auto"
                                 >
                                     <a href={STILLZONE_URL} rel="noopener">Show Still Zone</a>
                                 </Button>
@@ -616,8 +712,8 @@ export default function LandingPage() {
                                     </div>
                                 </div>
 
-                                <div className="mt-6 flex items-baseline gap-2">
-                                    <span className="text-5xl font-semibold tracking-tight text-[#003A40]">
+                                <div className="mt-6 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                                    <span className="text-4xl font-semibold tracking-tight text-[#003A40] sm:text-5xl">
                                         ₹299
                                     </span>
                                     <span className="text-sm text-[#3F6D6A]">/ month, billed yearly</span>
@@ -848,8 +944,8 @@ export default function LandingPage() {
             </section>
 
             {/* FINAL CTA */}
-            <section className="relative z-20 mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:py-28">
-                <div className="relative overflow-hidden rounded-3xl border border-[#88ADA8]/30 bg-gradient-to-br from-[#003A40] via-[#004851] to-[#3F6D6A] px-8 py-16 text-center text-white sm:px-14">
+            <section className="relative z-20 mx-auto max-w-7xl px-5 py-12 sm:px-8 sm:py-20 lg:py-28">
+                <div className="relative overflow-hidden rounded-3xl border border-[#88ADA8]/30 bg-gradient-to-br from-[#003A40] via-[#004851] to-[#3F6D6A] px-6 py-12 text-center text-white sm:px-14 sm:py-16">
                     <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-[#88ADA8]/20 blur-3xl" />
                     <div className="absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-[#629093]/30 blur-3xl" />
 
@@ -886,8 +982,8 @@ export default function LandingPage() {
 
             {/* FOOTER */}
             <footer className="relative z-20 border-t border-[#88ADA8]/25 bg-white/70 backdrop-blur-sm">
-                <div className="mx-auto max-w-7xl px-5 py-12 sm:px-8">
-                    <div className="grid gap-8 md:grid-cols-4">
+                <div className="mx-auto max-w-7xl px-5 py-8 sm:px-8 sm:py-10">
+                    <div className="grid gap-6 md:grid-cols-4 md:gap-8">
                         <div className="md:col-span-2">
                             <div className="flex items-center gap-2.5">
                                 <LogoMark />
@@ -916,7 +1012,7 @@ export default function LandingPage() {
                             </ul>
                         </div>
                     </div>
-                    <div className="mt-10 flex flex-col items-start justify-between gap-3 border-t border-[#88ADA8]/25 pt-6 text-xs text-[#3F6D6A] sm:flex-row sm:items-center">
+                    <div className="mt-6 flex flex-col items-start justify-between gap-2 border-t border-[#88ADA8]/25 pt-5 text-xs text-[#3F6D6A] sm:mt-8 sm:flex-row sm:items-center">
                         <p>© {new Date().getFullYear()} Still Lift. A mindful pause for everyday life.</p>
                         <p>Made with care · Not a substitute for medical advice.</p>
                     </div>
@@ -1073,7 +1169,7 @@ function Stat({
     );
 }
 
-function LogoMark({ size = 40 }: { size?: number }) {
+function LogoMark({ size = 40, className = '' }: { size?: number; className?: string }) {
     return (
         <Image
             src={logoStillLift}
@@ -1081,7 +1177,7 @@ function LogoMark({ size = 40 }: { size?: number }) {
             width={size}
             height={size}
             priority
-            className="select-none"
+            className={`select-none ${className}`}
         />
     );
 }
