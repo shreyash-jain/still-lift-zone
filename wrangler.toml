@@ -12,3 +12,6 @@ NEXT_PRIVATE_DEBUG_CACHE = "1"
 # SUPER_ADMIN_EMAIL, SUPER_ADMIN_PASSWORD, SUPER_ADMIN_JWT_SECRET
 # are set in Cloudflare Worker dashboard → Variables and Secrets (as Secrets).
 # Do NOT commit them here — this file is in git.
+# SUPERADMIN_SUMMARY_KEY (at least 32 characters, e.g. openssl rand -hex 32) is
+# set the same way: Voctex's operator console reads /api/superadmin/v1/users with
+# it (src/app/api/superadmin/v1/users/route.ts). Unset, that endpoint answers 404.
