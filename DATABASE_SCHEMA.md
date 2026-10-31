@@ -511,3 +511,51 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 ```
+
+---
+
+## 15. LLM Usage & AI Costing
+**Purpose**: One row per LLM API call: which user made it, which provider/model was used, the tokens it consumed and what it cost. Feeds the super-admin AI usage & costing screens. Full migration: `scripts/create_llm_usage_logs_table.sql`.
+
+### `public.llm_usage_logs`
+
+```sql
+create table public.llm_usage_logs (
+  id                  uuid primary key default gen_random_uuid(),
+  user_id             uuid references profiles(id) on delete set null,
+  user_email          text,                  -- Snapshot from profiles at insert (trigger)
+  user_name           text,                  -- Snapshot from profiles at insert (trigger)
+  provider            text not null,         -- 'openai', 'anthropic', 'google', ...
+  model               text not null,         -- Exact model id sent to the provider
+  feature             text,                  -- App feature that made the call
+  request_id          text,                  -- Provider's request id
+  input_tokens        integer not null default 0,
+  output_tokens       integer not null default 0,
+  cached_input_tokens integer not null default 0,  -- Subset of input_tokens served from cache
+  total_tokens        integer generated always as (input_tokens + output_tokens) stored,
+  input_cost_usd      numeric(12,6) not null default 0,
+  output_cost_usd     numeric(12,6) not null default 0,
+  total_cost_usd      numeric(12,6) generated always as (input_cost_usd + output_cost_usd) stored,
+  status              text not null default 'success' check (status in ('success', 'error')),
+  error_message       text,
+  latency_ms          integer,
+  metadata            jsonb not null default '{}'::jsonb,
+  created_at          timestamptz not null default now()
+);
+```
+
+Costs are stored in USD as `numeric`, not integer cents, because a single call usually costs a fraction of a cent.
+
+### Indexes
+```sql
+create index idx_llm_usage_user_created  on llm_usage_logs (user_id, created_at desc);
+create index idx_llm_usage_created       on llm_usage_logs (created_at desc);
+create index idx_llm_usage_provider_model on llm_usage_logs (provider, model, created_at desc);
+```
+
+### `public.llm_usage_user_summary` (view)
+Per-user totals for the admin dashboard: `user_id`, `full_name`, `email`, `total_requests`, `failed_requests`, `total_input_tokens`, `total_output_tokens`, `total_tokens`, `total_cost_usd`, `first_used_at`, `last_used_at`. Created with `security_invoker = true` so it obeys the table's RLS.
+
+### Security (RLS)
+- RLS is enabled with **no policies**: anon and authenticated roles can neither read nor write.
+- Writes go through `recordLlmUsage()` in `src/lib/llm-usage.ts`, and admin reads use the service role key.
